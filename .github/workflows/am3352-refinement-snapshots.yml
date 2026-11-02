@@ -24,8 +24,10 @@ jobs:
       max-parallel: 11
       matrix:
         revision:
-          - name: fix
-            sha: d2745844193e10a0e89044f45ca5f864b2590c9f
+          - name: detour-repro
+            sha: 0bbdd1a7a73fa410c081215ca290c8613d84f89c
+          - name: final-fix
+            sha: d5b319ff2991671c56daaf9f264e9ef4bf3151db
         sample:
           - control
           - control-inner1
@@ -43,6 +45,13 @@ jobs:
         with:
           ref: ${{ matrix.revision.sha }}
           persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: 380c3fa58c4e934302de35a8486443f571914a45
+          path: snapshot-harness
+          persist-credentials: false
+      - name: Use the identical opt-in snapshot test without changing solver code
+        run: cp snapshot-harness/tests/repros/am3352-completed-pcb.test.ts tests/repros/am3352-completed-pcb.test.ts
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.0
@@ -53,7 +62,7 @@ jobs:
           RUN_AM3352_PCB_SAMPLE: ${{ matrix.sample }}
         run: |
           bunx --no-install biome format --write tests/repros/am3352-completed-pcb.test.ts
-          bun test tests/repros/am3352-completed-pcb.test.ts --timeout 3720000
+          bun test tests/repros/am3352-completed-pcb.test.ts --timeout 3720000 -u
       - name: Install only an ephemeral rasterizer for visual inspection
         run: npm install --prefix "$RUNNER_TEMP/pcb-preview-raster" --ignore-scripts --no-audit --no-fund @resvg/resvg-js@2.6.2
       - name: Retain completed uncommitted review blobs
