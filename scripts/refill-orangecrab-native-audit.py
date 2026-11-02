@@ -1,4 +1,3 @@
-import sys
 from pathlib import Path
 
 import pcbnew
@@ -10,9 +9,13 @@ for sample in ["baseline", "rerouted"]:
     print(f"Loading {sample}", flush=True)
     board = pcbnew.LoadBoard(str(board_path))
     assert board is not None
+    zones = list(board.Zones())
+    identifiers = [zone.m_Uuid.AsString() for zone in zones]
+    print(f"Native zone identities: {len(identifiers)} total, {len(set(identifiers))} unique", flush=True)
+    assert len(identifiers) == len(set(identifiers))
     print(f"Building connectivity for {sample}", flush=True)
     board.BuildConnectivity()
-    print(f"Refilling {sample}: {len(board.Zones())} authored zones", flush=True)
+    print(f"Refilling {sample}: {len(zones)} authored zones", flush=True)
     filler = pcbnew.ZONE_FILLER(board)
     assert filler.Fill(board.Zones()), f"Native refill failed: {sample}"
     assert pcbnew.SaveBoard(str(board_path), board)

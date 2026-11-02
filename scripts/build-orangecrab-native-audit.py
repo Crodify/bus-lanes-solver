@@ -63,6 +63,30 @@ def clear_cached_fills(text):
     assert states > 0
     return "".join(pieces), count, states
 
+
+def normalize_nil_zone_ids(text):
+    used = {int(stamp, 16) for stamp in re.findall(r"\(tstamp ([0-9a-fA-F]+)\)", text)}
+    pieces, previous, replacements = [], 0, []
+    next_stamp = 0xF0000000
+    for index, match in enumerate(re.finditer(r"(?m)^  \(zone(?=\s|\))", text)):
+        start = match.start()
+        end = sexpr_end(text, text.index("(", start, match.end()))
+        zone = text[start:end]
+        if re.search(r"\(tstamp 0\)", zone):
+            while next_stamp in used: next_stamp += 1
+            stamp = format(next_stamp, "08X")
+            normalized, count = re.subn(r"\(tstamp 0\)", f"(tstamp {stamp})", zone, count=1)
+            assert count == 1
+            assert normalized.replace(f"(tstamp {stamp})", "(tstamp 0)", 1) == zone
+            zone = normalized
+            replacements.append({"zoneIndex": index, "originalTimestamp": "0", "auditTimestamp": stamp})
+            used.add(next_stamp)
+            next_stamp += 1
+        pieces.append(text[previous:start] + zone)
+        previous = end
+    pieces.append(text[previous:])
+    return "".join(pieces), replacements
+
 def position(point):
     return round(point["x"] + 159.91, 6), round(102.95 - point["y"], 6)
 def number(value):
@@ -102,9 +126,10 @@ for label in ["baseline", "rerouted"]:
     target.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source.with_suffix(".pro"), target / "OrangeCrab.pro")
     candidate, fill_count, state_count = clear_cached_fills(text if label == "baseline" else derived)
+    candidate, zone_id_replacements = normalize_nil_zone_ids(candidate)
     (target / "OrangeCrab.kicad_pcb").write_text(candidate)
     if label == "baseline":
         (source.parent / "unfilled-source.kicad_pcb").write_text(candidate)
-audit = {"sourceUnchanged": source.read_bytes() == raw, "removed": dict(removed), "added": dict(added), "unrelatedSourcePcbTextUnchanged": True, "selectedNativeNets": sorted(labels[name] for name in names), "cachedFillBlocksClearedBeforeNativeRefill": fill_count, "nativeFilledStatusFlagsReset": state_count, "authoredZoneOutlinesAndSettingsUnchanged": True}
+audit = {"sourceUnchanged": source.read_bytes() == raw, "removed": dict(removed), "added": dict(added), "unrelatedSourcePcbTextUnchanged": True, "selectedNativeNets": sorted(labels[name] for name in names), "cachedFillBlocksClearedBeforeNativeRefill": fill_count, "nativeFilledStatusFlagsReset": state_count, "authoredZoneOutlinesAndSettingsUnchanged": True, "auditOnlyNilZoneIdReplacements": zone_id_replacements}
 (work / "native" / "build-audit.json").write_text(json.dumps(audit, indent=2))
 print(json.dumps(audit))

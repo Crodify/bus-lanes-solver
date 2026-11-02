@@ -7,7 +7,6 @@ on:
       - .github/workflows/orangecrab-completed-proof.yml
       - scripts/build-orangecrab-native-audit.py
       - scripts/audit-orangecrab-native-board.py
-      - scripts/refill-orangecrab-native-audit.py
   workflow_dispatch:
 
 permissions:
@@ -95,9 +94,9 @@ jobs:
           echo '4597f3ac08e21c09253b27ca1b9e26aaf3c3d3e2147b6c0d79c0dc6aa555e201  work/native-source/OrangeCrab.kicad_pcb' | sha256sum --check
       - name: Replace only the removed DDR copper in a separate derived copy
         run: python3 scripts/build-orangecrab-native-audit.py
-      - name: Fresh native zone refill through the versioned Python API
+      - name: Fresh native refill after audit-only legacy identifier normalization
         run: timeout 720 xvfb-run -a python3 -u scripts/refill-orangecrab-native-audit.py
-      - name: Native DRC after successful refill
+      - name: Native DRC after completed refill
         run: |
           for sample in baseline rerouted; do
             timeout 360 kicad-cli pcb drc --format json \
