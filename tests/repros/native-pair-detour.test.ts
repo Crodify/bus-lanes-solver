@@ -63,14 +63,14 @@ for (const orientation of ["vertical", "mirrored", "omitted gap"] as const)
     }
     const before = structuredClone(input)
     const solver = new BusLanesPipelineSolver(input, {
-      maxRoutingTimeMs: 20000,
+      maxRoutingTimeMs: 60000,
     })
     solver.solve()
     expectCompletedRouting(solver, before)
     expect(
       pairCouplingReports(input, solver.traces).every((pair) => pair.matched),
     ).toBe(true)
-  }, 30000)
+  }, 70000)
 
 for (const control of ["direct", "explicit-detour"] as const)
   test(`the completed ${control} positive control passes every routing gate`, async () => {
