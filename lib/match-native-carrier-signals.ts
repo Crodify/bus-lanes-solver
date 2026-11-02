@@ -17,6 +17,7 @@ import { pairCouplingReports } from "./pair-coupling"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { sharedPairSpacingReports } from "./shared-pair-spacing"
 import { nativeSignalGeometryIsValid } from "./native-signal-geometry"
+import { refineNativeCarrierSignals } from "./refine-native-carrier-signals"
 import { fixedCopper, VectorScene } from "./vector-scene"
 import type { Connection, SimpleRouteJson, Trace } from "./types"
 
@@ -438,6 +439,26 @@ export function* matchNativeCarrierSignals(
   if (!state.collisions && !state.unfinished.length && valid(state.traces))
     return [...paired, ...state.traces]
   for (let repair = 0; repair < 6; repair++) {
+    const refined = yield* refineNativeCarrierSignals({
+      input: original,
+      paired,
+      traces: state.traces,
+      minimums,
+      maximums,
+    })
+    state = {
+      traces: refined,
+      collisions: graph(refined).length,
+      unfinished: unfinished(refined),
+    }
+    progress?.({
+      ...state,
+      stage: "native_fixed_via_repair",
+      pass: repair,
+      traces: [...paired, ...state.traces],
+    })
+    if (!state.collisions && !state.unfinished.length && valid(state.traces))
+      return [...paired, ...state.traces]
     const closure = new Set<string>(),
       hits = graph(state.traces)
     for (const [a, b] of hits) {
