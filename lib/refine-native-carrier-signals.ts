@@ -89,6 +89,23 @@ export function* refineNativeCarrierSignals({
           ),
       },
     ]
+    const escapeCopper = fixedCopper({
+      ...input,
+      obstacles: [],
+      traces: escapes,
+    })
+    // A carrier-only replacement cannot repair a collision in these frozen
+    // escapes or via lands. Leave it for the existing joint negotiation.
+    if (
+      others.some((trace) =>
+        conflicts.firstConflict(
+          escapeCopper,
+          physical(trace),
+          clearance - 1e-8,
+        ),
+      )
+    )
+      continue
     const local: SimpleRouteJson = {
       ...input,
       allowedLayers: [first.layer],
