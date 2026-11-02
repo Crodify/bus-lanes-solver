@@ -1,0 +1,59 @@
+name: OrangeCrab shared regression source validation
+
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths:
+      - .github/workflows/orangecrab-regression-source.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  validate:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: d2745844193e10a0e89044f45ca5f864b2590c9f
+          path: candidate
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Put the equivalent real-board harness in the shared fixture and repro directories
+        run: |
+          cp controller/scripts/preview-sources/orangecrab-routing.fixture.txt candidate/tests/fixtures/orangecrab-routing.ts
+          cp controller/scripts/preview-sources/orangecrab-byte0-routing.test.txt candidate/tests/repros/orangecrab-byte0-routing.test.ts
+          cd candidate
+          bun install --ignore-scripts
+          bunx --no-install biome format --stdin-file-path=lib/orangecrab-routing-fixture.ts < tests/fixtures/orangecrab-routing.ts > "$RUNNER_TEMP/orangecrab-routing-formatted.ts"
+          cp "$RUNNER_TEMP/orangecrab-routing-formatted.ts" tests/fixtures/orangecrab-routing.ts
+          bunx --no-install biome format --write tests/repros/orangecrab-byte0-routing.test.ts
+          bun run typecheck
+          bun test tests/repros/orangecrab-byte0-routing.test.ts
+      - name: Retain only the checked source blobs for the fixing PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs")
+            async function source(path) {
+              const result = await github.rest.git.createBlob({
+                ...context.repo,
+                content: fs.readFileSync("candidate/" + path).toString("base64"),
+                encoding: "base64",
+              })
+              return result.data.sha
+            }
+            const fixturePath = "tests/fixtures/orangecrab-routing.ts"
+            const testPath = "tests/repros/orangecrab-byte0-routing.test.ts"
+            console.log("ORANGECRAB_REGRESSION_SOURCE " + JSON.stringify({
+              fixturePath, testPath,
+              fixtureSha: await source(fixturePath), testSha: await source(testPath),
+            }))
