@@ -76,6 +76,6 @@ jobs:
               const png = new Resvg(svg, { fitTo: { mode: "width", value: 1600 } }).render().asPng()
               console.log("PCB_PREVIEW " + JSON.stringify({
                 case: process.env.CASE_NAME, path: "tests/repros/__snapshots__/" + file,
-                svgSha: await blob(svg), pngSha: await blob(png),
+                svgSha: await blob(svg), pngBase64Sha: await blob(Buffer.from(png.toString("base64"), "utf8")),
               }))
             }
