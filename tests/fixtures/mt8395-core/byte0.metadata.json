@@ -1,0 +1,61 @@
+{
+  "scope": "byte0",
+  "inputSha256": "c090d06d00e6eb80f55748c8d420a306a893fa0c2be1cf29f4e97de4687a347f",
+  "signals": [
+    {
+      "sourceTraceId": "source_trace_0",
+      "name": "EMI1_DQ0",
+      "endpoints": "U1.C6 to U2.B2"
+    },
+    {
+      "sourceTraceId": "source_trace_1",
+      "name": "EMI1_DQ1",
+      "endpoints": "U1.E7 to U2.C2"
+    },
+    {
+      "sourceTraceId": "source_trace_2",
+      "name": "EMI1_DQ2",
+      "endpoints": "U1.A3 to U2.E2"
+    },
+    {
+      "sourceTraceId": "source_trace_3",
+      "name": "EMI1_DQ3",
+      "endpoints": "U1.D8 to U2.F2"
+    },
+    {
+      "sourceTraceId": "source_trace_4",
+      "name": "EMI1_DQ4",
+      "endpoints": "U1.E8 to U2.F4"
+    },
+    {
+      "sourceTraceId": "source_trace_5",
+      "name": "EMI1_DQ5",
+      "endpoints": "U1.A4 to U2.E4"
+    },
+    {
+      "sourceTraceId": "source_trace_6",
+      "name": "EMI1_DQ6",
+      "endpoints": "U1.B6 to U2.C4"
+    },
+    {
+      "sourceTraceId": "source_trace_7",
+      "name": "EMI1_DQ7",
+      "endpoints": "U1.A7 to U2.B4"
+    },
+    {
+      "sourceTraceId": "source_trace_8",
+      "name": "EMI1_DMI0",
+      "endpoints": "U1.A5 to U2.C3"
+    },
+    {
+      "sourceTraceId": "source_trace_9",
+      "name": "EMI1_DQS0_T",
+      "endpoints": "U1.C5 to U2.D3"
+    },
+    {
+      "sourceTraceId": "source_trace_10",
+      "name": "EMI1_DQS0_C",
+      "endpoints": "U1.D5 to U2.E3"
+    }
+  ]
+}
