@@ -99,7 +99,7 @@ jobs:
       - name: Native DRC after completed refill
         run: |
           for sample in baseline rerouted; do
-            timeout 360 kicad-cli pcb drc --format json \
+            timeout 360 kicad-cli pcb drc --all-track-errors --format json \
               --output "work/native-audit/native/$sample/drc.json" \
               "work/native-audit/native/$sample/OrangeCrab.kicad_pcb"
           done

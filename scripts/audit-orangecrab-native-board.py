@@ -38,6 +38,9 @@ for trace in routing["traces"]:
 skew = max(lengths.values()) - min(lengths.values())
 summary = {"purpose": "Native copper/connectivity audit only; not whole-board acceptance",
  "kicadVersion": pcbnew.Version(), "sourceUnchanged": hashlib.sha256(source.read_bytes()).hexdigest() == "4597f3ac08e21c09253b27ca1b9e26aaf3c3d3e2147b6c0d79c0dc6aa555e201",
+ "baselineViolationsByType": dict(collections.Counter(v.get("type") for v in reports["baseline"].get("violations", []))),
+ "reroutedViolationsByType": dict(collections.Counter(v.get("type") for v in reports["rerouted"].get("violations", []))),
+ "newViolationsByType": dict(collections.Counter(json.loads(key)[0] for key in extra.elements())),
  "baselineViolations": sum(baseline.values()), "reroutedViolations": sum(rerouted.values()), "newViolations": sum(extra.values()),
  "baselineUnconnectedItems": len(reports["baseline"].get("unconnected_items", [])), "reroutedUnconnectedItems": len(reports["rerouted"].get("unconnected_items", [])),
  "originalPadComponentFixedCopperUnchanged": before == after, "componentCount": 163, "layerCount": 6,
@@ -45,7 +48,10 @@ summary = {"purpose": "Native copper/connectivity audit only; not whole-board ac
  "limits": "KiCad coordinate rounding is audited separately; source-board violations remain. No fabrication acceptance or signal-integrity qualification."}
 (root / "native/native-audit.json").write_text(json.dumps(summary, indent=2))
 print(json.dumps(summary, indent=2))
-if extra: print("New native findings:", "\n".join(extra.keys())[:7000])
+if extra:
+    involved = [key for key in extra if any(f"[{net}]" in key for net in selected)]
+    print("New findings involving requested DDR nets:", "\\n".join(involved)[:7000])
+    print("Other finding signatures changed:", sum(extra[key] for key in extra if key not in involved))
 assert summary["sourceUnchanged"]
 assert not extra, "New native DRC findings"
 assert summary["reroutedUnconnectedItems"] == 0, "Native board has disconnected copper"
