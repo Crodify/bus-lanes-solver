@@ -1,0 +1,81 @@
+name: Native refinement snapshot review
+
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths:
+      - .github/workflows/native-refinement-previews.yml
+      - scripts/preview-sources/**
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  preview:
+    name: Review ${{ matrix.case.name }} snapshots
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        case:
+          - name: repro
+            sha: 3dd0428fb02660281cbc85295fc5acd9aa71a881
+          - name: fix
+            sha: 106c7f4601bd4155750615560b4dc49e6ff22060
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: controller
+          persist-credentials: false
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.case.sha }}
+          path: candidate
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Prepare the focused regression through the existing snapshot helper
+        env:
+          CASE_NAME: ${{ matrix.case.name }}
+        run: |
+          cp "controller/scripts/preview-sources/native-refinement-$CASE_NAME.test.txt" candidate/tests/repros/native-carrier-refinement.test.ts
+          cd candidate
+          bun install --ignore-scripts
+          bunx --no-install biome format --write tests/repros/native-carrier-refinement.test.ts
+          bun test tests/repros/native-carrier-refinement.test.ts
+      - name: Install only an ephemeral SVG rasterizer for visual inspection
+        run: npm install --prefix "$RUNNER_TEMP/pcb-preview-raster" --ignore-scripts --no-audit --no-fund @resvg/resvg-js@2.6.2
+      - name: Store successful images as uncommitted review blobs
+        uses: actions/github-script@v7
+        env:
+          CASE_NAME: ${{ matrix.case.name }}
+        with:
+          script: |
+            const fs = require("node:fs")
+            const path = require("node:path")
+            const { Resvg } = require(path.join(process.env.RUNNER_TEMP, "pcb-preview-raster/node_modules/@resvg/resvg-js"))
+            const root = path.join(process.env.GITHUB_WORKSPACE, "candidate")
+            async function blob(bytes) {
+              const result = await github.rest.git.createBlob({
+                ...context.repo, content: bytes.toString("base64"), encoding: "base64",
+              })
+              return result.data.sha
+            }
+            const testPath = "tests/repros/native-carrier-refinement.test.ts"
+            console.log("PCB_TEST_SOURCE " + JSON.stringify({
+              case: process.env.CASE_NAME, path: testPath,
+              sha: await blob(fs.readFileSync(path.join(root, testPath))),
+            }))
+            const directory = path.join(root, "tests/repros/__snapshots__")
+            for (const file of fs.readdirSync(directory).sort()) {
+              if (!file.startsWith("native-carrier-refinement-") || !file.endsWith(".snap.svg")) continue
+              const svg = fs.readFileSync(path.join(directory, file))
+              const png = new Resvg(svg, { fitTo: { mode: "width", value: 1600 } }).render().asPng()
+              console.log("PCB_PREVIEW " + JSON.stringify({
+                case: process.env.CASE_NAME, path: "tests/repros/__snapshots__/" + file,
+                svgSha: await blob(svg), pngSha: await blob(png),
+              }))
+            }
