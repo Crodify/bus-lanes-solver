@@ -1,0 +1,46 @@
+name: Diagnose native baseline zone refill
+on:
+  push:
+    branches: [diagnostic/orangecrab-completed-proof-20261102]
+    paths: [.github/workflows/native-zone-refill-backtrace.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  diagnose:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: orangecrab-completed-ddr-845e8b328f064c1122d52a0640b44ade8083f560
+          run-id: 41348725239
+          github-token: ${{ github.token }}
+          path: work/native-audit
+      - name: Install native KiCad 9 and debugger
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-9.0-releases
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y kicad python3-wxgtk4.0 xvfb xauth gdb
+          kicad-cli version
+      - name: Retrieve byte-identical original source
+        run: |
+          mkdir -p work/native-source
+          source_url=https://raw.githubusercontent.com/orangecrab-fpga/orangecrab-hardware/c511d569fe2af39467041f888bc231020f40c6ac/hardware/orangecrab_r0.2.1
+          curl --fail --location "$source_url/OrangeCrab.kicad_pcb" --output work/native-source/OrangeCrab.kicad_pcb
+          curl --fail --location "$source_url/OrangeCrab.pro" --output work/native-source/OrangeCrab.pro
+          echo '4597f3ac08e21c09253b27ca1b9e26aaf3c3d3e2147b6c0d79c0dc6aa555e201  work/native-source/OrangeCrab.kicad_pcb' | sha256sum --check
+          python3 scripts/build-orangecrab-native-audit.py
+      - name: Interrupt the hanging baseline fill and print function stacks
+        env:
+          DEBUGINFOD_URLS: ""
+        run: |
+          timeout --signal=INT --kill-after=20s 60 \
+            xvfb-run -a gdb --batch \
+            -ex "set pagination off" -ex "set confirm off" \
+            -ex run -ex "thread apply all bt 16" \
+            --args python3 -u scripts/refill-orangecrab-native-audit.py
