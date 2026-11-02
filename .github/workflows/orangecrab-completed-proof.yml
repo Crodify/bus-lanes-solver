@@ -28,8 +28,8 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: orangecrab-completed-ddr-845e8b328f064c1122d52a0640b44ade8083f560
-          run-id: 41348725239
+          name: orangecrab-final-d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          run-id: 41454561576
           github-token: ${{ github.token }}
           path: work/completed
       - name: Verify successful fresh solve before publishing its inspected SVG
@@ -38,7 +38,7 @@ jobs:
           import json
           from pathlib import Path
           report = json.loads(Path("work/completed/report.json").read_text())
-          assert report["solverCommit"] == "845e8b328f064c1122d52a0640b44ade8083f560"
+          assert report["solverCommit"] == "d5b319ff2991671c56daaf9f264e9ef4bf3151db"
           assert report["solved"] and report["sourceUnchanged"] and report["inputUnchanged"]
           assert report["connectivity"]["valid"]
           assert report["connectivity"]["connectedConnectionCount"] == 11
@@ -75,8 +75,8 @@ jobs:
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
-          name: orangecrab-completed-ddr-845e8b328f064c1122d52a0640b44ade8083f560
-          run-id: 41348725239
+          name: orangecrab-final-d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          run-id: 41454561576
           github-token: ${{ github.token }}
           path: work/native-audit
       - name: Install native KiCad and standalone Python runtime

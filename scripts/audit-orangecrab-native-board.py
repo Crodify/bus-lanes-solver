@@ -37,6 +37,7 @@ for trace in routing["traces"]:
     lengths[trace["connection_name"]] = sum(math.dist(a, b) for a, b in zip(points, points[1:]))
 skew = max(lengths.values()) - min(lengths.values())
 summary = {"purpose": "Native copper/connectivity audit only; not whole-board acceptance",
+ "sourceSolverCommit": json.loads((root / "report.json").read_text())["solverCommit"],
  "kicadVersion": pcbnew.Version(), "sourceUnchanged": hashlib.sha256(source.read_bytes()).hexdigest() == "4597f3ac08e21c09253b27ca1b9e26aaf3c3d3e2147b6c0d79c0dc6aa555e201",
  "baselineViolationsByType": dict(collections.Counter(v.get("type") for v in reports["baseline"].get("violations", []))),
  "reroutedViolationsByType": dict(collections.Counter(v.get("type") for v in reports["rerouted"].get("violations", []))),
