@@ -23,7 +23,7 @@ def frozen(board):
         if via: item += [t.GetDrillValue(), t.TopLayer(), t.BottomLayer()]
         copper.append(tuple(item))
     return pads, components, sorted(copper)
-source_board = pcbnew.LoadBoard(str(source))
+source_board = pcbnew.LoadBoard(str(source.parent / "unfilled-source.kicad_pcb"))
 result_board = pcbnew.LoadBoard(str(root / "native/rerouted/OrangeCrab.kicad_pcb"))
 before, after = frozen(source_board), frozen(result_board)
 assert before == after, "Unrelated native pad/component/copper geometry changed"
