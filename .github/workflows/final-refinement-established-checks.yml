@@ -1,0 +1,36 @@
+name: Final refinement established-budget checks
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths: [.github/workflows/final-refinement-established-checks.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  checks:
+    name: Required checks ${{ matrix.revision }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - revision: repro
+            sha: 380c3fa58c4e934302de35a8486443f571914a45
+          - revision: fix
+            sha: d5b319ff2991671c56daaf9f264e9ef4bf3151db
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install
+      - name: Full tests with the repository's existing CI timeout
+        run: bun test --timeout 120000
+      - run: bun test tests/repros
+      - run: bun run typecheck
+      - run: bun run format:check
+      - run: bun run test:package
