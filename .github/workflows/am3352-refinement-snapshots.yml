@@ -24,10 +24,8 @@ jobs:
       max-parallel: 11
       matrix:
         revision:
-          - name: repro
-            sha: 832a0839cec4faedd9c8619068ea6bf3ab1cde7f
           - name: fix
-            sha: e1e5f4d1661c5cb714a715e7210aeb9383abf767
+            sha: d2745844193e10a0e89044f45ca5f864b2590c9f
         sample:
           - control
           - control-inner1
