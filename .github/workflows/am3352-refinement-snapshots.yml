@@ -1,0 +1,109 @@
+name: Completed AM3352 native refinement snapshots
+
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths:
+      - .github/workflows/am3352-refinement-snapshots.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+
+jobs:
+  snapshot:
+    name: Fresh ${{ matrix.revision.name }} ${{ matrix.sample }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 70
+    strategy:
+      fail-fast: false
+      max-parallel: 11
+      matrix:
+        revision:
+          - name: repro
+            sha: 832a0839cec4faedd9c8619068ea6bf3ab1cde7f
+          - name: fix
+            sha: e1e5f4d1661c5cb714a715e7210aeb9383abf767
+        sample:
+          - control
+          - control-inner1
+          - right
+          - left
+          - above
+          - inner-layers
+          - inner-layers-right
+          - inner-layers-left
+          - inner-layers-above
+          - inner-layers-complete-ca
+          - outer-layers
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.revision.sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install without changing production dependencies
+        run: bun install --ignore-scripts
+      - name: Fresh solve and all routing gates before the existing PCB snapshot
+        env:
+          RUN_AM3352_PCB_SAMPLE: ${{ matrix.sample }}
+        run: |
+          bunx --no-install biome format --write tests/repros/am3352-completed-pcb.test.ts
+          bun test tests/repros/am3352-completed-pcb.test.ts --timeout 3720000
+      - name: Install only an ephemeral rasterizer for visual inspection
+        run: npm install --prefix "$RUNNER_TEMP/pcb-preview-raster" --ignore-scripts --no-audit --no-fund @resvg/resvg-js@2.6.2
+      - name: Retain completed uncommitted review blobs
+        uses: actions/github-script@v7
+        env:
+          SAMPLE: ${{ matrix.sample }}
+          REVISION_NAME: ${{ matrix.revision.name }}
+          SOLVER_SHA: ${{ matrix.revision.sha }}
+        with:
+          script: |
+            const fs = require("node:fs")
+            const path = require("node:path")
+            const { Resvg } = require(path.join(process.env.RUNNER_TEMP, "pcb-preview-raster/node_modules/@resvg/resvg-js"))
+            async function blob(bytes) {
+              const result = await github.rest.git.createBlob({
+                ...context.repo, content: bytes.toString("base64"), encoding: "base64",
+              })
+              return result.data.sha
+            }
+            const sample = process.env.SAMPLE
+            const testPath = "tests/repros/am3352-completed-pcb.test.ts"
+            const summary = JSON.parse(fs.readFileSync("work/am3352/" + sample + ".summary.json", "utf8"))
+            if (!summary.solved || !summary.inputUnchanged || !summary.fixedCopperUnchanged ||
+                !summary.validation.valid || !summary.validation.complete || !summary.validation.matched)
+              throw Error("Completed snapshot validation failed")
+            const directory = "tests/repros/__snapshots__"
+            const files = fs.readdirSync(directory).filter(file =>
+              file.startsWith("am3352-completed-pcb-") && file.endsWith("-" + sample + ".snap.svg"))
+            if (files.length !== 1) throw Error("Expected one completed SVG")
+            const file = files[0]
+            const svg = fs.readFileSync(path.join(directory, file))
+            const png = new Resvg(svg, { fitTo: { mode: "width", value: 1600 } }).render().asPng()
+            console.log("PCB_AM_PREVIEW " + JSON.stringify({
+              revision: process.env.REVISION_NAME, solverSha: process.env.SOLVER_SHA, sample,
+              path: directory + "/" + file, svgSha: await blob(svg),
+              pngBase64Sha: await blob(Buffer.from(png.toString("base64"), "utf8")),
+              testPath, testSha: await blob(fs.readFileSync(testPath)),
+              inputSha256: summary.inputSha256, milliseconds: summary.milliseconds,
+              fixedCopperUnchanged: summary.fixedCopperUnchanged,
+              fixedPowerTraces: summary.validation.fixedPowerTraces,
+              fixedPowerVias: summary.validation.fixedPowerVias,
+              buses: summary.validation.busLengths,
+              pairs: summary.validation.pairLengths,
+            }))
+      - name: Retain only successfully audited fresh output and measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: completed-${{ matrix.revision.name }}-${{ matrix.sample }}
+          path: work/am3352/
+          if-no-files-found: error
+          retention-days: 14
