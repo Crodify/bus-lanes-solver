@@ -1,0 +1,104 @@
+name: Final native refinement validation
+
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths: [.github/workflows/final-native-refinement-validation.yml]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+
+jobs:
+  checks:
+    name: Six required checks ${{ matrix.revision }}
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - revision: repro
+            sha: 380c3fa58c4e934302de35a8486443f571914a45
+          - revision: fix
+            sha: d5b319ff2991671c56daaf9f264e9ef4bf3151db
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ matrix.sha }}
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install
+      - run: bun test
+      - run: bun test tests/repros
+      - run: bun run typecheck
+      - run: bun run format:check
+      - run: bun run test:package
+
+  orangecrab:
+    name: Fresh real regression final fix
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 140
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install
+      - name: Canonical source provenance and outline
+        run: bun test tests/repros/orangecrab-reference.test.ts tests/repros/orangecrab-outline.test.ts
+      - name: Fresh solve through shared real-board regression
+        env:
+          RUN_ORANGECRAB_NATIVE_ROUTING: "1"
+        run: bun test tests/repros/orangecrab-byte0-routing.test.ts --timeout 7800000 -u
+      - name: Prepare completed SVG inspection
+        run: npm install --prefix "$RUNNER_TEMP/pcb-preview-raster" --ignore-scripts --no-audit --no-fund @resvg/resvg-js@2.6.2
+      - name: Publish successful uncommitted review blobs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs")
+            const path = require("node:path")
+            const { Resvg } = require(path.join(process.env.RUNNER_TEMP, "pcb-preview-raster/node_modules/@resvg/resvg-js"))
+            const report = JSON.parse(fs.readFileSync("work/orangecrab-byte0/report.json", "utf8"))
+            if (report.solverCommit !== "d5b319ff2991671c56daaf9f264e9ef4bf3151db" || !report.solved ||
+                !report.connectivity.valid || report.connectivity.connectedConnectionCount !== 11 ||
+                report.connectivity.connectedEndpointCount !== 22 || !report.drc.valid ||
+                report.drc.issues.length || !report.sourceUnchanged || !report.inputUnchanged ||
+                !report.buses.every(b => b.matched && b.aboveMinimumLength && b.withinLengthLimit) ||
+                ![...report.pairs, ...report.coupling, ...report.shared, ...report.exterior].every(p => p.matched))
+              throw Error("Original real-board acceptance failed")
+            const svg = fs.readFileSync("work/orangecrab-byte0/completed-ddr.svg")
+            const png = new Resvg(svg, { fitTo: { mode: "width", value: 2400 } }).render().asPng()
+            async function blob(bytes) {
+              const result = await github.rest.git.createBlob({
+                ...context.repo, content: bytes.toString("base64"), encoding: "base64",
+              })
+              return result.data.sha
+            }
+            console.log("PCB_ORANGECRAB_FINAL " + JSON.stringify({
+              solverCommit: report.solverCommit, seconds: report.seconds,
+              svgSha: await blob(svg),
+              pngBase64Sha: await blob(Buffer.from(png.toString("base64"), "utf8")),
+              connected: report.connectivity.connectedConnectionCount,
+              endpoints: report.connectivity.connectedEndpointCount,
+              drcIssues: report.drc.issues.length,
+              buses: report.buses, pairs: report.pairs,
+            }))
+      - name: Retain only completed real routing artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orangecrab-final-d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          path: work/orangecrab-byte0/
+          if-no-files-found: error
+          retention-days: 30
