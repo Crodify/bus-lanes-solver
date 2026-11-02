@@ -1,0 +1,34 @@
+name: Native refinement eligibility regression
+
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths:
+      - .github/workflows/native-refinement-eligibility.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  BUN_JSC_forceRAMSize: "2147483648"
+  BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+
+jobs:
+  regression:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d2745844193e10a0e89044f45ca5f864b2590c9f
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install --ignore-scripts
+      - name: Verify fixed-escape eligibility and the existing populated six-layer regression
+        run: |
+          bun test tests/repros/native-carrier-refinement.test.ts tests/native-ddr-groups-complete.test.ts
+      - run: bun run typecheck
+      - run: bun run format:check
