@@ -1,0 +1,27 @@
+name: OrangeCrab captured source constraints
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths: [.github/workflows/orangecrab-source-constraints.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  constraints:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Report captured numeric rules without routing or editing fixtures
+        run: |
+          bun --eval '
+            const input = await Bun.file("tests/fixtures/orangecrab-r0.2.1/byte0.srj.json").json();
+            const rules = Object.fromEntries(Object.entries(input).filter(([name]) => !["traces", "obstacles", "connections", "outline"].includes(name)));
+            console.log("ORANGECRAB_CAPTURED_RULES " + JSON.stringify(rules));
+          '
