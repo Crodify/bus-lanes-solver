@@ -1,0 +1,22 @@
+name: Final detour repro suite
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths: [.github/workflows/final-detour-repros.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  repros:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 8559d631d23c8b93ecf79d177aa457adc251ef50
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - run: bun install
+      - run: bun test tests/repros
