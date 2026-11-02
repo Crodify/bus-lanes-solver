@@ -6,6 +6,8 @@ import {
 } from "@tscircuit/fanout-solver"
 import { BusLanesPipelineSolver, BusLanesSolver } from "../../lib"
 import { carrierCompactionView } from "../../lib/carrier-compaction-view"
+import { refineNativeCarrierSignals } from "../../lib/refine-native-carrier-signals"
+import { length } from "../../lib/geometry"
 import { sharedPairSpacingReports } from "../../lib/shared-pair-spacing"
 import { exteriorPairSpacingReports } from "../../lib/exterior-pair-spacing"
 import { nativePairCircuit } from "../fixtures/native-pair-circuit"
@@ -226,3 +228,59 @@ for (const stage of ["pipeline", "valid-seed"] as const)
       },
     })
   }, 60000)
+
+test("a fixed-escape collision remains available for joint negotiation", () => {
+  const { input, options } = nativeCarrierRefinement()
+  const before = structuredClone(input)
+  const control = new BusLanesPipelineSolver(input, options)
+  control.solve()
+  expectCompletedRouting(control, before)
+  const names = input.differentialPairs![0].connectionNames
+  const paired = control.traces.filter((trace) =>
+    names.includes(trace.connection_name!),
+  )
+  const ordinary = control.traces.filter((trace) => !paired.includes(trace))
+  const first = ordinary.find((trace) => trace.connection_name === "DQ")!
+  const neighbor = ordinary.find((trace) => trace.connection_name === "DQ2")!
+  const crossed = ordinary.map((trace) =>
+    trace === first
+      ? {
+          ...trace,
+          route: [trace.route[0], neighbor.route[0], ...trace.route.slice(1)],
+        }
+      : trace,
+  )
+  const crossedBefore = structuredClone(crossed)
+  const native = validateRoutedCopperDrc({
+    inputSrj: toNativeValidationSrj(input),
+    routedSrj: toNativeValidationSrj({
+      ...input,
+      traces: [...paired, ...crossed],
+    }),
+    clearance: input.minTraceToPadEdgeClearance!,
+    allowBlindAndBuriedVias: false,
+  })
+  expect(native.valid).toBe(false)
+  const ceiling = Math.max(...paired.map((trace) => length(trace.route)))
+  const minimums = new Map(
+    ordinary.map((trace) => [
+      trace.connection_name!,
+      ceiling - input.buses![0].maxLengthSkew!,
+    ]),
+  )
+  const maximums = new Map(
+    ordinary.map((trace) => [trace.connection_name!, ceiling]),
+  )
+  const work = refineNativeCarrierSignals({
+    input,
+    paired,
+    traces: crossed,
+    minimums,
+    maximums,
+  })
+  const result = work.next()
+  expect(result.done).toBe(true)
+  expect(result.value).toEqual(crossed)
+  expect(crossed).toEqual(crossedBefore)
+  expect(input).toEqual(before)
+}, 60000)
