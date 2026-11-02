@@ -1,0 +1,75 @@
+name: Review fresh final OrangeCrab result
+on:
+  push:
+    branches: [diagnostic/native-refinement-previews-20261102]
+    paths: [.github/workflows/review-final-orangecrab-result.yml]
+  workflow_dispatch:
+permissions:
+  contents: write
+  actions: read
+jobs:
+  summarize:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 130
+    steps:
+      - name: Wait for the original fresh solver job
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const deadline = Date.now() + 120 * 60 * 1000
+            while (true) {
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({...context.repo, run_id: 41454561576})
+              const job = jobs.data.jobs.find(j => j.id === 125307825924)
+              if (!job) throw Error("Expected original fresh solver job")
+              if (job.status === "completed") {
+                if (job.conclusion !== "success") throw Error("Fresh final-head routing failed: " + job.conclusion)
+                break
+              }
+              if (Date.now() > deadline) throw Error("Fresh solver has not finished")
+              await new Promise(resolve => setTimeout(resolve, 30000))
+            }
+      - uses: actions/download-artifact@v4
+        with:
+          name: orangecrab-final-d5b319ff2991671c56daaf9f264e9ef4bf3151db
+          run-id: 41454561576
+          github-token: ${{ github.token }}
+          path: completed
+      - name: Review only the accepted fresh-run measurements
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs")
+            const report = JSON.parse(fs.readFileSync("completed/report.json", "utf8"))
+            if (report.solverCommit !== "d5b319ff2991671c56daaf9f264e9ef4bf3151db" || !report.solved ||
+                !report.connectivity.valid || report.connectivity.connectedConnectionCount !== 11 ||
+                report.connectivity.connectedEndpointCount !== 22 || !report.drc.valid ||
+                report.drc.issues.length || !report.sourceUnchanged || !report.inputUnchanged ||
+                !report.buses.every(b => b.matched && b.aboveMinimumLength && b.withinLengthLimit) ||
+                ![...report.pairs, ...report.coupling, ...report.shared, ...report.exterior].every(p => p.matched))
+              throw Error("Fresh routing-model acceptance failed")
+            const measured = {
+              sourceRun: 41454561576, sourceJob: 125307825924,
+              solverCommit: report.solverCommit, bunVersion: report.bunVersion,
+              measuredSolverAndValidationSeconds: report.seconds,
+              timingScope: "Excludes installation and corridor-fixture preparation; no cross-run speedup claim",
+              solved: report.solved,
+              connected: report.connectivity.connectedConnectionCount,
+              endpoints: report.connectivity.connectedEndpointCount,
+              nativeNewCopperDrcIssues: report.drc.issues.length,
+              sourceUnchanged: report.sourceUnchanged, inputUnchanged: report.inputUnchanged,
+              sourceSrjSha256: report.sourceSrjSha256, sourceCircuitSha256: report.sourceCircuitSha256,
+              buses: report.buses.map(b => ({
+                busId: b.busId, skewMm: b.skewMm, toleranceMm: b.toleranceMm,
+                matched: b.matched, aboveMinimumLength: b.aboveMinimumLength,
+                withinLengthLimit: b.withinLengthLimit,
+              })),
+              pairs: report.pairs.map(p => ({busId: p.busId, skewMm: p.skewMm, toleranceMm: p.toleranceMm, matched: p.matched})),
+              coupling: report.coupling,
+              shared: report.shared, exterior: report.exterior,
+              modelScope: report.modelScope,
+            }
+            const markdown = "Fresh final-head OrangeCrab byte-0 result\n\n```json\n" + JSON.stringify(measured, null, 2) + "\n```\n"
+            core.summary.addRaw(markdown)
+            await core.summary.write()
+            const result = await github.rest.git.createBlob({...context.repo, content: markdown, encoding: "utf-8"})
+            console.log("ORANGECRAB_FRESH_SUMMARY " + JSON.stringify({sha: result.data.sha, solverCommit: report.solverCommit, seconds: report.seconds}))
