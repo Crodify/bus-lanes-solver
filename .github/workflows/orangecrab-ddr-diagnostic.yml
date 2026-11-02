@@ -1,0 +1,82 @@
+name: OrangeCrab fresh DDR routing diagnostic
+
+on:
+  push:
+    branches:
+      - diagnostic/orangecrab-final-refinement-20261102
+    paths:
+      - .github/workflows/orangecrab-ddr-diagnostic.yml
+      - scripts/route-orangecrab-ddr-diagnostic.ts
+      - scripts/orangecrab-ddr-diagnostic.test.ts
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: orangecrab-fresh-ddr-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fresh-route:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 140
+    env:
+      BUN_JSC_forceRAMSize: "2147483648"
+      BUN_JSC_miniVMHeapGrowthFactor: "1.05"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.0
+      - name: Install unchanged snapshot and routing dependencies
+        run: bun install
+      - name: Verify canonical source provenance and outline
+        run: bun test tests/repros/orangecrab-reference.test.ts tests/repros/orangecrab-outline.test.ts
+      - name: Fresh solve and independent completed-routing snapshot
+        env:
+          RUN_ORANGECRAB_NATIVE_ROUTING: "1"
+        run: bun test scripts/orangecrab-ddr-diagnostic.test.ts --timeout 7800000
+      - name: Prepare only completed inspection pixels
+        run: npm install --prefix "$RUNNER_TEMP/pcb-preview-raster" --ignore-scripts --no-audit --no-fund @resvg/resvg-js@2.6.2
+      - name: Retain successful uncommitted routing review blobs
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs")
+            const path = require("node:path")
+            const { Resvg } = require(path.join(process.env.RUNNER_TEMP, "pcb-preview-raster/node_modules/@resvg/resvg-js"))
+            const report = JSON.parse(fs.readFileSync("work/orangecrab-diagnostic/report.json", "utf8"))
+            if (!report.solved || !report.connectivity.valid ||
+                report.connectivity.connectedConnectionCount !== 11 ||
+                report.connectivity.connectedEndpointCount !== 22 ||
+                !report.drc.valid || report.drc.issues.length ||
+                !report.sourceUnchanged || !report.inputUnchanged)
+              throw Error("Real-board completion failed")
+            const svg = fs.readFileSync("work/orangecrab-diagnostic/completed-ddr.svg")
+            const png = new Resvg(svg, { fitTo: { mode: "width", value: 2400 } }).render().asPng()
+            async function blob(bytes) {
+              const result = await github.rest.git.createBlob({
+                ...context.repo, content: bytes.toString("base64"), encoding: "base64",
+              })
+              return result.data.sha
+            }
+            console.log("PCB_ORANGECRAB_PREVIEW " + JSON.stringify({
+              solverCommit: report.solverCommit,
+              svgSha: await blob(svg),
+              pngBase64Sha: await blob(Buffer.from(png.toString("base64"), "utf8")),
+              seconds: report.seconds,
+              connected: report.connectivity.connectedConnectionCount,
+              drcIssues: report.drc.issues.length,
+              buses: report.buses, pairs: report.pairs,
+            }))
+      - name: Retain only successfully validated routing-model artifacts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: orangecrab-completed-ddr-${{ github.sha }}
+          path: work/orangecrab-diagnostic/
+          if-no-files-found: error
+          retention-days: 14
