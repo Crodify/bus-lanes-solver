@@ -23,36 +23,45 @@ traces = [t for t in output["traces"] if t.get("connection_name") in names]
 assert len(traces) == 11
 layers = dict(zip(["top", "inner1", "inner2", "inner3", "inner4", "bottom"], ["F.Cu", "In1.Cu", "In2.Cu", "In3.Cu", "In4.Cu", "B.Cu"]))
 
+def sexpr_end(text, start):
+    depth, quoted, escaped, end = 0, False, False, start
+    while end < len(text):
+        char = text[end]
+        if quoted:
+            if escaped: escaped = False
+            elif char == "\\": escaped = True
+            elif char == '"': quoted = False
+        elif char == '"': quoted = True
+        elif char == "(": depth += 1
+        elif char == ")":
+            depth -= 1
+            if depth == 0: return end + 1
+        end += 1
+    raise ValueError("Unbalanced cached source expression")
+
 def clear_cached_fills(text):
     pattern = re.compile(r"(?m)^[ \t]*\((filled_polygon|fill_segments)(?=\s|\))")
     pieces, previous, count = [], 0, 0
     for match in pattern.finditer(text):
-        if match.start() < previous:
-            continue
+        if match.start() < previous: continue
         start = text.index("(", match.start(), match.end())
-        depth, quoted, escaped, end = 0, False, False, start
-        while end < len(text):
-            char = text[end]
-            if quoted:
-                if escaped: escaped = False
-                elif char == "\\": escaped = True
-                elif char == '"': quoted = False
-            elif char == '"': quoted = True
-            elif char == "(": depth += 1
-            elif char == ")":
-                depth -= 1
-                if depth == 0:
-                    end += 1
-                    break
-            end += 1
-        assert depth == 0 and end > start
+        end = sexpr_end(text, start)
         pieces.append(text[previous:match.start()])
         previous, count = end, count + 1
     pieces.append(text[previous:])
     assert count > 0
     result = "".join(pieces)
     assert not pattern.search(result)
-    return result, count
+    pieces, previous, states = [], 0, 0
+    for match in re.finditer(r"(?m)^  \(zone(?=\s|\))", result):
+        start = match.start()
+        end = sexpr_end(result, result.index("(", start, match.end()))
+        zone, changed = re.subn(r"(?m)^([ \t]*\(fill)\s+yes\b", r"\1", result[start:end], count=1)
+        pieces.append(result[previous:start] + zone)
+        previous, states = end, states + changed
+    pieces.append(result[previous:])
+    assert states > 0
+    return "".join(pieces), count, states
 
 def position(point):
     return round(point["x"] + 159.91, 6), round(102.95 - point["y"], 6)
@@ -92,10 +101,10 @@ for label in ["baseline", "rerouted"]:
     target = work / "native" / label
     target.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source.with_suffix(".pro"), target / "OrangeCrab.pro")
-    candidate, fill_count = clear_cached_fills(text if label == "baseline" else derived)
+    candidate, fill_count, state_count = clear_cached_fills(text if label == "baseline" else derived)
     (target / "OrangeCrab.kicad_pcb").write_text(candidate)
     if label == "baseline":
         (source.parent / "unfilled-source.kicad_pcb").write_text(candidate)
-audit = {"sourceUnchanged": source.read_bytes() == raw, "removed": dict(removed), "added": dict(added), "unrelatedSourcePcbTextUnchanged": True, "selectedNativeNets": sorted(labels[name] for name in names), "cachedFillBlocksClearedBeforeNativeRefill": fill_count, "authoredZoneOutlinesAndSettingsUnchanged": True}
+audit = {"sourceUnchanged": source.read_bytes() == raw, "removed": dict(removed), "added": dict(added), "unrelatedSourcePcbTextUnchanged": True, "selectedNativeNets": sorted(labels[name] for name in names), "cachedFillBlocksClearedBeforeNativeRefill": fill_count, "nativeFilledStatusFlagsReset": state_count, "authoredZoneOutlinesAndSettingsUnchanged": True}
 (work / "native" / "build-audit.json").write_text(json.dumps(audit, indent=2))
 print(json.dumps(audit))

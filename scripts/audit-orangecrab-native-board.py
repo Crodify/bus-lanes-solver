@@ -19,7 +19,7 @@ def frozen(board):
     for t in board.GetTracks():
         if t.GetNetname() in selected: continue
         via = isinstance(t, pcbnew.PCB_VIA)
-        item = [t.GetClass(), t.GetNetname(), t.GetStart().x, t.GetStart().y, t.GetEnd().x, t.GetEnd().y, t.GetWidth(pcbnew.F_Cu) if via else t.GetWidth(), t.GetLayer()]
+        item = [t.GetClass(), t.GetNetname(), t.GetStart().x, t.GetStart().y, t.GetEnd().x, t.GetEnd().y, t.GetWidth(pcbnew.F_Cu) if via and pcbnew.Version().startswith("10.") else t.GetWidth(), t.GetLayer()]
         if via: item += [t.GetDrillValue(), t.TopLayer(), t.BottomLayer()]
         copper.append(tuple(item))
     return pads, components, sorted(copper)
