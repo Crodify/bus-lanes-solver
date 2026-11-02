@@ -24,7 +24,7 @@ assert len(traces) == 11
 layers = dict(zip(["top", "inner1", "inner2", "inner3", "inner4", "bottom"], ["F.Cu", "In1.Cu", "In2.Cu", "In3.Cu", "In4.Cu", "B.Cu"]))
 
 def clear_cached_fills(text):
-    pattern = re.compile(r"(?m)^[ \\t]*\\((filled_polygon|fill_segments)(?=\\s|\\))")
+    pattern = re.compile(r"(?m)^[ \t]*\((filled_polygon|fill_segments)(?=\s|\))")
     pieces, previous, count = [], 0, 0
     for match in pattern.finditer(text):
         if match.start() < previous:
@@ -35,7 +35,7 @@ def clear_cached_fills(text):
             char = text[end]
             if quoted:
                 if escaped: escaped = False
-                elif char == "\\\\": escaped = True
+                elif char == "\\": escaped = True
                 elif char == '"': quoted = False
             elif char == '"': quoted = True
             elif char == "(": depth += 1
