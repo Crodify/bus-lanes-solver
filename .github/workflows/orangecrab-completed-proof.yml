@@ -1,0 +1,107 @@
+name: OrangeCrab completed routing proof
+
+on:
+  push:
+    branches: [diagnostic/orangecrab-completed-proof-20261102]
+    paths:
+      - .github/workflows/orangecrab-completed-proof.yml
+      - scripts/build-orangecrab-native-audit.py
+      - scripts/audit-orangecrab-native-board.py
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: orangecrab-completed-proof
+  cancel-in-progress: false
+
+jobs:
+  publish-inspected:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: orangecrab-completed-ddr-845e8b328f064c1122d52a0640b44ade8083f560
+          run-id: 41348725239
+          github-token: ${{ github.token }}
+          path: work/completed
+      - name: Verify successful fresh solve before publishing its inspected SVG
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          report = json.loads(Path("work/completed/report.json").read_text())
+          assert report["solverCommit"] == "845e8b328f064c1122d52a0640b44ade8083f560"
+          assert report["solved"] and report["sourceUnchanged"] and report["inputUnchanged"]
+          assert report["connectivity"]["valid"]
+          assert report["connectivity"]["connectedConnectionCount"] == 11
+          assert report["connectivity"]["connectedEndpointCount"] == 22
+          assert report["drc"]["valid"] and not report["drc"]["issues"]
+          assert all(b["aboveMinimumLength"] and b["withinLengthLimit"] and b["matched"] for b in report["buses"])
+          assert all(p["matched"] for key in ["pairs", "coupling", "shared", "exterior"] for p in report[key])
+          assert report["sourceSrjSha256"] == "d35e1db264568b8994b144526b78e1de788339c02205ff977a955b59d6b9828f"
+          assert report["sourceCircuitSha256"] == "22a2fd135fadc363f7712ead3cd05533c4b5c412fb055d1e55e704e1cdbe433e"
+          PY
+          mkdir -p scripts/__snapshots__
+          cp work/completed/completed-ddr.svg scripts/__snapshots__/orangecrab-ddr-diagnostic-completed-ddr.snap.svg
+          git diff --check
+      - name: Commit only the completed SVG already visually inspected
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add scripts/__snapshots__/orangecrab-ddr-diagnostic-completed-ddr.snap.svg
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "test: retain inspected completed OrangeCrab routing snapshot"
+          git push origin HEAD:refs/heads/diagnostic/orangecrab-completed-proof-20261102
+
+  native-copper:
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          name: orangecrab-completed-ddr-845e8b328f064c1122d52a0640b44ade8083f560
+          run-id: 41348725239
+          github-token: ${{ github.token }}
+          path: work/native-audit
+      - name: Install native KiCad 10
+        run: |
+          sudo add-apt-repository --yes ppa:kicad/kicad-10.0-releases
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y kicad
+          kicad-cli version
+      - name: Retrieve the unchanged pinned KiCad source
+        run: |
+          mkdir -p work/native-source
+          source_url=https://raw.githubusercontent.com/orangecrab-fpga/orangecrab-hardware/c511d569fe2af39467041f888bc231020f40c6ac/hardware/orangecrab_r0.2.1
+          curl --fail --location "$source_url/OrangeCrab.kicad_pcb" --output work/native-source/OrangeCrab.kicad_pcb
+          curl --fail --location "$source_url/OrangeCrab.pro" --output work/native-source/OrangeCrab.pro
+          echo '4597f3ac08e21c09253b27ca1b9e26aaf3c3d3e2147b6c0d79c0dc6aa555e201  work/native-source/OrangeCrab.kicad_pcb' | sha256sum --check
+      - name: Replace only the removed DDR copper in a separate derived copy
+        run: python3 scripts/build-orangecrab-native-audit.py
+      - name: Refill and audit both native boards with identical KiCad settings
+        run: |
+          for sample in baseline rerouted; do
+            kicad-cli pcb drc --refill-zones --save-board --format json \
+              --output "work/native-audit/native/$sample/drc.json" \
+              "work/native-audit/native/$sample/OrangeCrab.kicad_pcb"
+          done
+      - name: Independently check native connectivity and fixed geometry
+        run: python3 scripts/audit-orangecrab-native-board.py
+      - name: Retain only the native audit summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: orangecrab-native-copper-audit
+          path: work/native-audit/native/native-audit.json
+          if-no-files-found: error
+          retention-days: 14
