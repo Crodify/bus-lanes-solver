@@ -15,7 +15,10 @@ export interface NativePairedCarrierOptions {
   centerlines?: Point[][]
   /** Original package fields; temporary reservation vias must not enlarge uncoupled regions. */
   packageRegions?: ReturnType<typeof packageApproachRegions>
+  /** Retry original approaches when moving a via closes a tuning pocket. */
+  balanceApproaches?: boolean
   busTargetLength?: number
+  routingBounds?: SimpleRouteJson["bounds"]
   gridStep?: number
   maxApproachPasses?: number
   maxExpansionsPerRoute?: number
@@ -81,12 +84,16 @@ function defaultCenterlines(
     Number((Math.round(n / step) * step).toFixed(8))
   const out = Number(
     (
-      Math.floor(Math.max(...projection(source.copper, forward)) / step) * step
+      Math.floor(
+        (Math.max(...projection(source.copper, forward)) - 1e-8) / step,
+      ) * step
     ).toFixed(8),
   )
   const incoming = Number(
     (
-      Math.ceil(Math.min(...projection(target.copper, forward)) / step) * step
+      Math.ceil(
+        (Math.min(...projection(target.copper, forward)) + 1e-8) / step,
+      ) * step
     ).toFixed(8),
   )
   const sourceCenter = a.x * normal.x + a.y * normal.y,
@@ -224,13 +231,18 @@ export function* planNativePairedCarriers(
   const fixed = fixedCopper(input),
     projector = new GridHistoryProjector(
       new VectorScene(input, legs[0], native.minTraceWidth, fixed),
-      { bounds: input.bounds, step },
+      { bounds: options.routingBounds ?? input.bounds, step },
     )
   const history = [
       new Float32Array(projector.cellCount),
       new Float32Array(projector.cellCount),
     ],
-    router = new NativeCarrierRouter(input, step, history),
+    router = new NativeCarrierRouter(
+      input,
+      step,
+      history,
+      options.routingBounds,
+    ),
     routed = new Map<string, Trace>(),
     index = new CopperConflictIndex()
   const copperCache = new WeakMap<Trace, ReturnType<typeof fixedCopper>>()
@@ -303,6 +315,7 @@ export function* planNativePairedCarriers(
   // Choose a manufactured CPU via whose actual owned approach balances the
   // pair before residual package-only tuning. It never edits fixed power.
   for (const pair of pairs) {
+    if (options.balanceApproaches === false) continue
     const totals = pair.connectionNames.map(
       (name) =>
         length(routed.get(`${name}_0`)!.route) +
@@ -321,16 +334,32 @@ export function* planNativePairedCarriers(
       Math.hypot(p.x - point.x, p.y - point.y) +
       Math.hypot(p.x - c.pointsToConnect[1].x, p.y - c.pointsToConnect[1].y)
     for (
-      let x = Math.ceil(box.minX / step);
-      x <= Math.floor(box.maxX / step);
+      let x = Math.ceil(
+        (box.minX - (options.routingBounds ?? native.bounds).minX) / step,
+      );
+      x <=
+      Math.floor(
+        (box.maxX - (options.routingBounds ?? native.bounds).minX) / step,
+      );
       x++
     )
       for (
-        let y = Math.ceil((box.minY + 0.01) / step);
-        y <= Math.floor(Math.min(box.maxY, point.y + 0.2) / step);
+        let y = Math.ceil(
+          (box.minY + 0.01 - (options.routingBounds ?? native.bounds).minY) /
+            step,
+        );
+        y <=
+        Math.floor(
+          (Math.min(box.maxY, point.y + 0.2) -
+            (options.routingBounds ?? native.bounds).minY) /
+            step,
+        );
         y++
       ) {
-        const p = { x: x * step, y: y * step },
+        const p = {
+            x: (options.routingBounds ?? native.bounds).minX + x * step,
+            y: (options.routingBounds ?? native.bounds).minY + y * step,
+          },
           lower = estimate(p)
         if (lower <= desired + 0.3 && lower >= desired - 0.7) candidates.push(p)
       }
@@ -456,7 +485,7 @@ export function* planNativePairedCarriers(
       yield
     }
   } finally {
-    if (!solver.solved) solver.tryFinalAcceptance()
+    if (!solver.solved && !solver.failed) solver.tryFinalAcceptance()
   }
   if (!solver.solved) return null
   const total = solver.traces.map((t) =>
@@ -503,7 +532,7 @@ export function* planNativePairedCarriers(
       yield
     }
   } finally {
-    if (!matcher.solved) matcher.tryFinalAcceptance()
+    if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
   }
   if (!matcher.solved) return null
   return matcher.traces.map((t) =>

@@ -40,12 +40,23 @@ export class NativeCarrierRouter {
     readonly input: SimpleRouteJson,
     readonly step: number,
     readonly history: readonly Float32Array[],
+    readonly routingBounds: Bounds = input.bounds,
   ) {
+    if (
+      !Object.values(routingBounds).every(Number.isFinite) ||
+      routingBounds.minX < input.bounds.minX ||
+      routingBounds.maxX > input.bounds.maxX ||
+      routingBounds.minY < input.bounds.minY ||
+      routingBounds.maxY > input.bounds.maxY ||
+      routingBounds.maxX <= routingBounds.minX ||
+      routingBounds.maxY <= routingBounds.minY
+    )
+      throw Error("Native routing window must lie inside the board bounds")
     this.carrier = input.allowedLayers![0]
     this.fixed = fixedCopper(input)
     this.cellCount =
-      (Math.ceil((input.bounds.maxX - input.bounds.minX) / step) + 1) *
-      (Math.ceil((input.bounds.maxY - input.bounds.minY) / step) + 1)
+      (Math.ceil((routingBounds.maxX - routingBounds.minX) / step) + 1) *
+      (Math.ceil((routingBounds.maxY - routingBounds.minY) / step) + 1)
     const padding = 10 * (input.minViaPadDiameter ?? 0.3)
     for (const o of input.obstacles) {
       if (!o.componentId) continue
@@ -98,7 +109,7 @@ export class NativeCarrierRouter {
       soft,
       0,
       undefined,
-      { bounds: this.input.bounds, step: this.step },
+      { bounds: this.routingBounds, step: this.step },
     )
     const access = search.getRoutingAccess()
     search.cancel()
@@ -119,7 +130,7 @@ export class NativeCarrierRouter {
     options: NativeCarrierSearchOptions = {},
   ): Generator<void, NativeCarrierCandidate | null> {
     const input = this.input,
-      bounds = input.bounds,
+      bounds = this.routingBounds,
       step = this.step,
       N = this.cellCount
     const width = input.minTraceWidth,

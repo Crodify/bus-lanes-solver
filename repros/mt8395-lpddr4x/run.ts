@@ -47,6 +47,7 @@ const report = {
   case: name,
   solverPath,
   inputSha256: metadata.inputSha256,
+  outputSha256: output ? inputHash(output) : null,
   inputUnchanged: unchanged,
   timeoutMs: budget,
   solveMilliseconds: milliseconds,

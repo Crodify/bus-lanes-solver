@@ -85,6 +85,7 @@ export function tuneNativeCarrierSignal(
   maximum: number,
   soft: Trace[],
   bankCost?: (trace: Trace) => number,
+  maxCandidates = 65536,
 ): Trace | null {
   const trace = cleanNativeCarrierSignal(native, connection, raw, soft, false)
   if (!trace) return null
@@ -167,7 +168,7 @@ export function tuneNativeCarrierSignal(
         candidateScore: bankCost,
         alignPeriods: true,
         packMeanders: true,
-        maxCandidates: 65536,
+        maxCandidates,
       },
     )[0]
     const full = {

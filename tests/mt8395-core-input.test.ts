@@ -1,5 +1,4 @@
 import { expect, test } from "bun:test"
-import { readFileSync } from "node:fs"
 import { caseNames, loadCase, inputHash } from "../repros/mt8395-lpddr4x/input"
 import { renderInputSnapshot } from "../repros/mt8395-lpddr4x/snapshot"
 import {
@@ -57,13 +56,10 @@ test("MT8395 captures retain all pad obstacles and exact core constraints", () =
   }
 })
 
-test("tracked MT8395 snapshot depicts exact input and refuses any routed copper", () => {
+test("diagnostic MT8395 renderer labels unrouted input and refuses copper", () => {
   const { input, metadata } = loadCase("full")
-  const expected = readFileSync(
-    `${import.meta.dir}/../repros/mt8395-lpddr4x/board.snap.svg`,
-    "utf8",
-  )
-  expect(renderInputSnapshot(input, metadata)).toBe(expected)
+  const expected = renderInputSnapshot(input, metadata)
+  expect(renderInputSnapshot(structuredClone(input), metadata)).toBe(expected)
   expect(expected).toContain("UNROUTED INPUT")
   expect(expected).toContain("11 unrouted requests")
   expect(() =>

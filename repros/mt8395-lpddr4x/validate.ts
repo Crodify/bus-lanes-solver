@@ -4,6 +4,7 @@ import {
 } from "@tscircuit/fanout-solver"
 import { busLengthReports, pairLengthReports } from "../../lib/route-lengths"
 import { exteriorPairSpacingReports } from "../../lib/exterior-pair-spacing"
+import { joinedSignalGeometryIsValid } from "../../lib/joined-signal-geometry"
 import type { SimpleRouteJson } from "../../lib/types"
 
 /** Manufacturing check independent of net ownership: a same-net drilled hole
@@ -92,6 +93,9 @@ export function validateOutput(
   const pairs = pairLengthReports(input, output.traces ?? [])
   const coupling = exteriorPairSpacingReports(input, output.traces ?? [])
   const viaInPad = viaInPadIssues(input, output)
+  const invalidGeometry = (output.traces ?? [])
+    .filter((trace) => !joinedSignalGeometryIsValid({ input, trace }))
+    .map((trace) => trace.connection_name)
   const complete =
     (output.traces?.length ?? 0) === input.connections.length &&
     connectivity.valid
@@ -100,6 +104,7 @@ export function validateOutput(
       complete &&
       drc.valid &&
       !viaInPad.length &&
+      !invalidGeometry.length &&
       buses.every(
         (b) =>
           b.aboveMinimumLength &&
@@ -112,6 +117,7 @@ export function validateOutput(
     connectivity,
     drc,
     viaInPad,
+    invalidGeometry,
     buses,
     pairs,
     coupling,

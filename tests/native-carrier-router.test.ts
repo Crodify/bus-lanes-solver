@@ -109,3 +109,37 @@ test("native carrier keeps drill holes outside its own pads by default", () => {
         Math.hypot(via.x - pad.center.x, via.y - pad.center.y),
       ).toBeGreaterThanOrEqual(pad.width / 2 + input.minViaHoleDiameter! / 2)
 })
+
+test("a translated search window preserves native endpoints, obstacles and public board bounds", () => {
+  const input = nativeInput()
+  const before = structuredClone(input)
+  const bounds = { minX: -7.35, maxX: 7.35, minY: -2.35, maxY: 2.35 }
+  const cells = 148 * 48
+  const router = new NativeCarrierRouter(
+    input,
+    0.1,
+    [new Float32Array(cells), new Float32Array(cells)],
+    bounds,
+  )
+  const search = router.route(input.connections[0], { maxExpansions: 200000 })
+  let result = search.next()
+  while (!result.done) result = search.next()
+  const trace = result.value!.trace
+  expect(trace.route[0]).toMatchObject({ x: -6, y: 0, layer: "top" })
+  expect(trace.route.at(-1)).toMatchObject({ x: 6, y: 0, layer: "top" })
+  expect(
+    validateRoutedCopperDrc({
+      inputSrj: input,
+      routedSrj: { ...input, traces: [trace] },
+      clearance: 0.1,
+    } as never).valid,
+  ).toBe(true)
+  expect(input).toEqual(before)
+  expect(
+    () =>
+      new NativeCarrierRouter(input, 0.1, [], {
+        ...bounds,
+        maxX: 9,
+      }),
+  ).toThrow("inside the board bounds")
+})
