@@ -1,11 +1,12 @@
 # MT8395 LPDDR4X: exact core input reproduction
 
-![Unrouted MT8395 core input, with byte-zero inset](board.snap.svg)
+![Validated 11-signal MT8395 byte-zero routing](byte0.snap.svg)
 
 [Visual snapshot](board.snap.svg) · [full-board SRJ](../../tests/fixtures/mt8395-core/full.srj.json) · [byte-zero SRJ](../../tests/fixtures/mt8395-core/byte0.srj.json) · [DQS-pair SRJ](../../tests/fixtures/mt8395-core/pair.srj.json) · [measured baseline](baseline.json)
 
-The requested visual is explicitly an **input diagnostic**, not a completed route. Dashed lines are airwires. It shows all 1,446 pad obstacles and the 11-signal EMI1 byte-zero group. No intermediate or failed copper is presented as an accepted board. The input snapshot refuses any supplied PCB traces and has a deterministic snapshot regression test. No AM3352 gallery snapshots are changed.
+The **byte-zero capture now routes all 11 signals**, including the coupled DQS pair, with its original timing and manufacturing constraints. [Completed byte snapshot](byte0.snap.svg), [validated copper](routed/byte0.srj.json.gz), and [solve report](routed/byte0-report.json) are retained for review. The snapshot is exported only after solver success and independent validation.
 
+The full 138-signal case is still under development. `board.snap.svg` remains its clearly labeled input-only diagnostic: dashed lines are unrouted requests. It is not a completed full-board result. No failed or intermediate copper is published.
 ## Replay the exact request
 
 From the repository root, install its dependencies with `bun install`, then:
@@ -14,7 +15,7 @@ From the repository root, install its dependencies with `bun install`, then:
 # No core installation is needed for these solver-only replays.
 bun repros/mt8395-lpddr4x/run.ts pair --timeout-ms 30000
 bun repros/mt8395-lpddr4x/run.ts byte0 --timeout-ms 60000
-bun repros/mt8395-lpddr4x/run.ts full --timeout-ms 60000
+bun repros/mt8395-lpddr4x/run.ts full --timeout-ms 1800000
 ```
 
 Each command imports **this checkout's** `BusLanesPipelineSolver` from `lib/index.ts`, passes an immutable, hash-checked capture directly to its constructor, and performs a fresh matched solve. No top-level `allowedLayers` is added; no connections, metadata, pads, bus limits, pair constraints, or via permissions are changed. The only solver option is an elapsed-time budget. `--solver /absolute/path/to/another-checkout/lib/index.ts` and `--label before` support comparisons without changing the input.
@@ -60,6 +61,12 @@ Core maps `pcbAllowedLayers` to `bus.allowedLayers` in `getBusesForSimpleRouteJs
 
 The earlier redundant-global-layer workaround is intentionally absent here. Solver strategy selection distinguishes per-bus restrictions from an explicit global inner carrier; that is a solver-side behavior, not evidence that core dropped a required field. No core PR is needed for this repro.
 
+## Routing strategy
+
+The pipeline recognizes disjoint native buses pinned to individual inner layers, including restrictions supplied only on each bus. It reserves local escapes before placing all coupled pairs, then negotiates ordinary signals together on each shared carrier. Each bus keeps its own timing window; command/address buses without a differential anchor derive starting targets from fresh native paths. Search windows are bounded around the participating packages without changing board geometry or removing obstacles.
+
+The final acceptance gate checks the original full-board input, including whole-signal lengths, differential coupling, self-clearance, through-via clearance, and endpoint connectivity. Existing supplied-fanout and native strategies retain their dispatch precedence.
+
 ## Observed baseline and acceptance
 
 At solver commit `005bee4ae0af17cea30108e4f57d58cd4b2dc430`, the exact two-signal input fails with `Insufficient tuning clearance for source_trace_0`. The byte and full-board requests exceed their 60-second budgets; see `baseline.json` for fresh source-checkout measurements. A bounded search failure is not proof that the geometry is impossible.
@@ -68,10 +75,10 @@ The prior connectivity-only experiment is **not** replayed here because it chang
 
 ```sh
 bun test tests/mt8395-core-input.test.ts
-bun repros/mt8395-lpddr4x/snapshot.ts
+bun repros/mt8395-lpddr4x/snapshot.ts repros/mt8395-lpddr4x/results/byte0 byte0
 ```
 
-The test verifies input ownership and constraints, the tracked visual, rejection of partial copper in the input snapshot, and rejection of missing routes and same-net via-in-pad output. Changing the solver requires fresh replays; revalidating retained output is not a solve.
+The tests verify input ownership and constraints, fresh pair/byte solves, deterministic accepted-copper rendering, and rejection of missing routes and same-net via-in-pad output. Changing the solver requires fresh replays; revalidating retained output is not a solve.
 
 ## Hardware scope and provenance
 
@@ -84,4 +91,4 @@ Factual package geometry and ball assignments come from:
 
 The PDFs are not redistributed. CPU pad diameter and fabrication rules are explicit experimental assumptions. No pin swapping or existing route replay is used.
 
-Benchmark effect: this PR adds captures, a standalone reproduction, its input diagnostic and validation tests. Production solver code, AM3352 fixtures, harness, budgets and acceptance rules are unchanged. Fresh pinned base/head benchmark results are reported in the PR; the required 11-sample Blacksmith acceptance must pass before merge.
+Benchmark effect: this stacked change adds routing for native per-bus carrier restrictions and strengthens native repair feedback. AM3352 fixtures and acceptance rules are unchanged. The required fresh, paired 11-sample Blacksmith benchmark comparison must be reported and pass before merge; retained-output validation is not a fresh solve.
