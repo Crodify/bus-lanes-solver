@@ -1,6 +1,11 @@
 import { readFileSync, writeFileSync } from "node:fs"
 import type { SimpleRouteJson } from "../../lib/types"
-import { inputHash, loadCase, type CaptureMetadata } from "./input"
+import {
+  inputHash,
+  loadCase,
+  type CaptureMetadata,
+  type CaseName,
+} from "./input"
 
 import { validateOutput } from "./validate"
 
@@ -215,23 +220,27 @@ export function renderRoutedSnapshot(
   return renderSnapshot(input, metadata, output)
 }
 if (import.meta.main) {
-  const { input, metadata } = loadCase("full")
-  const directory = process.argv[2] ?? `${import.meta.dir}/results/full`
+  const name = (process.argv[3] ?? "full") as CaseName
+  const { input, metadata } = loadCase(name)
+  const directory = process.argv[2] ?? `${import.meta.dir}/results/${name}`
   const report = JSON.parse(readFileSync(`${directory}/report.json`, "utf8"))
   if (
+    report.case !== name ||
     !report.solved ||
     report.failed ||
     !report.accepted ||
     report.inputSha256 !== metadata.inputSha256
   )
-    throw Error("Snapshot export requires a successful full-board solve report")
+    throw Error(
+      "Snapshot export requires a successful solve report for this case",
+    )
   const output = JSON.parse(
     readFileSync(`${directory}/accepted.srj.json`, "utf8"),
   )
   if (report.outputSha256 !== inputHash(output))
     throw Error("Snapshot copper does not match the successful solve report")
   writeFileSync(
-    `${import.meta.dir}/board.snap.svg`,
+    `${import.meta.dir}/${name === "full" ? "board" : name}.snap.svg`,
     renderRoutedSnapshot(input, metadata, output),
   )
   console.log("Wrote validated completed DDR snapshot")

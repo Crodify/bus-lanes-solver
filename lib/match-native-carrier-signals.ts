@@ -263,10 +263,32 @@ export function* matchNativeCarrierSignals(
           }
         }
         if (!candidate) {
-          const raw = yield* router.route(c, search)
+          let raw = yield* router.route(c, search)
+          // A congestion-cheap detour is not evidence that the whole bus must
+          // become longer. Preserve its timing window when a more expensive,
+          // length-bounded alternative is available.
+          if (
+            raw &&
+            options.deferSearchLengthBound &&
+            Number.isFinite(maximum) &&
+            length(raw.trace.route) > maximum + 1e-7
+          ) {
+            const bounded = yield* router.route(c, {
+              ...search,
+              maxLength: maximum,
+            })
+            if (bounded) raw = bounded
+          }
           if (raw) {
             if (options.deferSearchLengthBound) {
-              if (windows.grow(c.name, length(raw.trace.route))) {
+              const clean = cleanNativeCarrierSignal(
+                local,
+                c,
+                raw.trace,
+                others,
+                true,
+              )
+              if (clean && windows.grow(c.name, length(clean.route))) {
                 best = null
                 bestMetric = Infinity
                 stale = 0
@@ -285,6 +307,24 @@ export function* matchNativeCarrierSignals(
                   options.maxTuningCandidates,
                 )
               : cleanNativeCarrierSignal(local, c, raw.trace, others, true)
+            if (
+              !candidate &&
+              old &&
+              minimums.has(c.name) &&
+              length(old.route) < minimums.get(c.name)! - 1e-8 &&
+              joinedSignalGeometryIsValid({ input: original, trace: old })
+            )
+              candidate = tuneNativeCarrierSignal(
+                local,
+                c,
+                old,
+                minimums.get(c.name)!,
+                maximum,
+                others,
+                raw.bankCost,
+                options.maxTuningCandidates,
+                true,
+              )
             // A hard-clear shortest path can have no room for its timing bank.
             // Retrying it unchanged cannot improve the state: charge its carrier
             // corridor so the next search explores a different tunable topology.
@@ -341,6 +381,26 @@ export function* matchNativeCarrierSignals(
       const missing = unfinished([...frozen, ...all])
       for (const name of missing)
         trouble.set(name, (trouble.get(name) ?? 0) + 1)
+      // An isolated returning arm has no different-net conflict to charge.
+      // Without feedback the shortest-path search repeats that same invalid
+      // geometry forever, even though it is correctly marked unfinished.
+      for (const trace of all) {
+        if (joinedSignalGeometryIsValid({ input: original, trace })) continue
+        for (const wire of physical(trace)) {
+          const plane = wire.layer === input.allowedLayers![0] ? 1 : 0
+          if (wire.layer !== "top" && plane !== 1) continue
+          projector.penalizeIntersection(
+            history[plane],
+            wire.a,
+            wire.b,
+            wire.a,
+            wire.b,
+            wire.radius + clearance,
+            true,
+            2,
+          )
+        }
+      }
       const state = {
           traces: [...frozen, ...all],
           collisions: hits.length,

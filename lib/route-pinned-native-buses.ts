@@ -327,7 +327,7 @@ export function* routePinnedNativeBuses(
         }
         busTargetLengths[group.bus.busId] = Math.max(
           group.bus.minLength ?? 0,
-          Math.ceil(Math.max(...lengths) * 1.15),
+          Math.ceil(Math.max(...lengths) * 1.5),
         )
       }
     }
