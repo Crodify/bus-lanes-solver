@@ -1,0 +1,696 @@
+{
+  "scope": "full",
+  "inputSha256": "be7707c9188ba888fc551fcc341b424eefdb5c65e2ab9e593c3a9829b1fe4221",
+  "signals": [
+    {
+      "sourceTraceId": "source_trace_0",
+      "name": "EMI0_DQ0",
+      "endpoints": "U1.E27 to U2.AA2"
+    },
+    {
+      "sourceTraceId": "source_trace_1",
+      "name": "EMI0_DQ1",
+      "endpoints": "U1.F26 to U2.Y2"
+    },
+    {
+      "sourceTraceId": "source_trace_2",
+      "name": "EMI0_DQ2",
+      "endpoints": "U1.A30 to U2.V2"
+    },
+    {
+      "sourceTraceId": "source_trace_3",
+      "name": "EMI0_DQ3",
+      "endpoints": "U1.E26 to U2.U2"
+    },
+    {
+      "sourceTraceId": "source_trace_4",
+      "name": "EMI0_DQ4",
+      "endpoints": "U1.C26 to U2.U4"
+    },
+    {
+      "sourceTraceId": "source_trace_5",
+      "name": "EMI0_DQ5",
+      "endpoints": "U1.B29 to U2.V4"
+    },
+    {
+      "sourceTraceId": "source_trace_6",
+      "name": "EMI0_DQ6",
+      "endpoints": "U1.B27 to U2.Y4"
+    },
+    {
+      "sourceTraceId": "source_trace_7",
+      "name": "EMI0_DQ7",
+      "endpoints": "U1.A26 to U2.AA4"
+    },
+    {
+      "sourceTraceId": "source_trace_8",
+      "name": "EMI0_DQ8",
+      "endpoints": "U1.A24 to U2.AA11"
+    },
+    {
+      "sourceTraceId": "source_trace_9",
+      "name": "EMI0_DQ9",
+      "endpoints": "U1.B23 to U2.Y11"
+    },
+    {
+      "sourceTraceId": "source_trace_10",
+      "name": "EMI0_DQ10",
+      "endpoints": "U1.F24 to U2.V11"
+    },
+    {
+      "sourceTraceId": "source_trace_11",
+      "name": "EMI0_DQ11",
+      "endpoints": "U1.E23 to U2.U11"
+    },
+    {
+      "sourceTraceId": "source_trace_12",
+      "name": "EMI0_DQ12",
+      "endpoints": "U1.D21 to U2.U9"
+    },
+    {
+      "sourceTraceId": "source_trace_13",
+      "name": "EMI0_DQ13",
+      "endpoints": "U1.D22 to U2.V9"
+    },
+    {
+      "sourceTraceId": "source_trace_14",
+      "name": "EMI0_DQ14",
+      "endpoints": "U1.B21 to U2.Y9"
+    },
+    {
+      "sourceTraceId": "source_trace_15",
+      "name": "EMI0_DQ15",
+      "endpoints": "U1.B25 to U2.AA9"
+    },
+    {
+      "sourceTraceId": "source_trace_16",
+      "name": "EMI0_DMI0",
+      "endpoints": "U1.A28 to U2.Y3"
+    },
+    {
+      "sourceTraceId": "source_trace_17",
+      "name": "EMI0_DMI1",
+      "endpoints": "U1.A22 to U2.Y10"
+    },
+    {
+      "sourceTraceId": "source_trace_18",
+      "name": "EMI0_DQS0_T",
+      "endpoints": "U1.C28 to U2.W3"
+    },
+    {
+      "sourceTraceId": "source_trace_19",
+      "name": "EMI0_DQS0_C",
+      "endpoints": "U1.D28 to U2.V3"
+    },
+    {
+      "sourceTraceId": "source_trace_20",
+      "name": "EMI0_DQS1_T",
+      "endpoints": "U1.E25 to U2.W10"
+    },
+    {
+      "sourceTraceId": "source_trace_21",
+      "name": "EMI0_DQS1_C",
+      "endpoints": "U1.F25 to U2.V10"
+    },
+    {
+      "sourceTraceId": "source_trace_22",
+      "name": "EMI0_CA0",
+      "endpoints": "U1.B18 to U2.R2"
+    },
+    {
+      "sourceTraceId": "source_trace_23",
+      "name": "EMI0_CA1",
+      "endpoints": "U1.B17 to U2.P2"
+    },
+    {
+      "sourceTraceId": "source_trace_24",
+      "name": "EMI0_CA2",
+      "endpoints": "U1.A18 to U2.R9"
+    },
+    {
+      "sourceTraceId": "source_trace_25",
+      "name": "EMI0_CA3",
+      "endpoints": "U1.C20 to U2.R10"
+    },
+    {
+      "sourceTraceId": "source_trace_26",
+      "name": "EMI0_CA4",
+      "endpoints": "U1.A20 to U2.R11"
+    },
+    {
+      "sourceTraceId": "source_trace_27",
+      "name": "EMI0_CA5",
+      "endpoints": "U1.D19 to U2.P11"
+    },
+    {
+      "sourceTraceId": "source_trace_28",
+      "name": "EMI0_CK_T",
+      "endpoints": "U1.E17 to U2.P8"
+    },
+    {
+      "sourceTraceId": "source_trace_29",
+      "name": "EMI0_CK_C",
+      "endpoints": "U1.F17 to U2.P9"
+    },
+    {
+      "sourceTraceId": "source_trace_30",
+      "name": "EMI0_CS0",
+      "endpoints": "U1.F19 to U2.R4"
+    },
+    {
+      "sourceTraceId": "source_trace_31",
+      "name": "EMI0_CS1",
+      "endpoints": "U1.E18 to U2.R3"
+    },
+    {
+      "sourceTraceId": "source_trace_32",
+      "name": "EMI0_CKE0",
+      "endpoints": "U1.G21 to U2.P4"
+    },
+    {
+      "sourceTraceId": "source_trace_33",
+      "name": "EMI0_CKE1",
+      "endpoints": "U1.G20 to U2.P5"
+    },
+    {
+      "sourceTraceId": "source_trace_34",
+      "name": "EMI1_DQ0",
+      "endpoints": "U1.C6 to U2.B2"
+    },
+    {
+      "sourceTraceId": "source_trace_35",
+      "name": "EMI1_DQ1",
+      "endpoints": "U1.E7 to U2.C2"
+    },
+    {
+      "sourceTraceId": "source_trace_36",
+      "name": "EMI1_DQ2",
+      "endpoints": "U1.A3 to U2.E2"
+    },
+    {
+      "sourceTraceId": "source_trace_37",
+      "name": "EMI1_DQ3",
+      "endpoints": "U1.D8 to U2.F2"
+    },
+    {
+      "sourceTraceId": "source_trace_38",
+      "name": "EMI1_DQ4",
+      "endpoints": "U1.E8 to U2.F4"
+    },
+    {
+      "sourceTraceId": "source_trace_39",
+      "name": "EMI1_DQ5",
+      "endpoints": "U1.A4 to U2.E4"
+    },
+    {
+      "sourceTraceId": "source_trace_40",
+      "name": "EMI1_DQ6",
+      "endpoints": "U1.B6 to U2.C4"
+    },
+    {
+      "sourceTraceId": "source_trace_41",
+      "name": "EMI1_DQ7",
+      "endpoints": "U1.A7 to U2.B4"
+    },
+    {
+      "sourceTraceId": "source_trace_42",
+      "name": "EMI1_DQ8",
+      "endpoints": "U1.A9 to U2.B11"
+    },
+    {
+      "sourceTraceId": "source_trace_43",
+      "name": "EMI1_DQ9",
+      "endpoints": "U1.B10 to U2.C11"
+    },
+    {
+      "sourceTraceId": "source_trace_44",
+      "name": "EMI1_DQ10",
+      "endpoints": "U1.D10 to U2.E11"
+    },
+    {
+      "sourceTraceId": "source_trace_45",
+      "name": "EMI1_DQ11",
+      "endpoints": "U1.F10 to U2.F11"
+    },
+    {
+      "sourceTraceId": "source_trace_46",
+      "name": "EMI1_DQ12",
+      "endpoints": "U1.E12 to U2.F9"
+    },
+    {
+      "sourceTraceId": "source_trace_47",
+      "name": "EMI1_DQ13",
+      "endpoints": "U1.C12 to U2.E9"
+    },
+    {
+      "sourceTraceId": "source_trace_48",
+      "name": "EMI1_DQ14",
+      "endpoints": "U1.B12 to U2.C9"
+    },
+    {
+      "sourceTraceId": "source_trace_49",
+      "name": "EMI1_DQ15",
+      "endpoints": "U1.B8 to U2.B9"
+    },
+    {
+      "sourceTraceId": "source_trace_50",
+      "name": "EMI1_DMI0",
+      "endpoints": "U1.A5 to U2.C3"
+    },
+    {
+      "sourceTraceId": "source_trace_51",
+      "name": "EMI1_DMI1",
+      "endpoints": "U1.A11 to U2.C10"
+    },
+    {
+      "sourceTraceId": "source_trace_52",
+      "name": "EMI1_DQS0_T",
+      "endpoints": "U1.C5 to U2.D3"
+    },
+    {
+      "sourceTraceId": "source_trace_53",
+      "name": "EMI1_DQS0_C",
+      "endpoints": "U1.D5 to U2.E3"
+    },
+    {
+      "sourceTraceId": "source_trace_54",
+      "name": "EMI1_DQS1_T",
+      "endpoints": "U1.D9 to U2.D10"
+    },
+    {
+      "sourceTraceId": "source_trace_55",
+      "name": "EMI1_DQS1_C",
+      "endpoints": "U1.E9 to U2.E10"
+    },
+    {
+      "sourceTraceId": "source_trace_56",
+      "name": "EMI1_CA0",
+      "endpoints": "U1.E15 to U2.H2"
+    },
+    {
+      "sourceTraceId": "source_trace_57",
+      "name": "EMI1_CA1",
+      "endpoints": "U1.C16 to U2.J2"
+    },
+    {
+      "sourceTraceId": "source_trace_58",
+      "name": "EMI1_CA2",
+      "endpoints": "U1.A15 to U2.H9"
+    },
+    {
+      "sourceTraceId": "source_trace_59",
+      "name": "EMI1_CA3",
+      "endpoints": "U1.C13 to U2.H10"
+    },
+    {
+      "sourceTraceId": "source_trace_60",
+      "name": "EMI1_CA4",
+      "endpoints": "U1.A13 to U2.H11"
+    },
+    {
+      "sourceTraceId": "source_trace_61",
+      "name": "EMI1_CA5",
+      "endpoints": "U1.B15 to U2.J11"
+    },
+    {
+      "sourceTraceId": "source_trace_62",
+      "name": "EMI1_CK_T",
+      "endpoints": "U1.E16 to U2.J8"
+    },
+    {
+      "sourceTraceId": "source_trace_63",
+      "name": "EMI1_CK_C",
+      "endpoints": "U1.D16 to U2.J9"
+    },
+    {
+      "sourceTraceId": "source_trace_64",
+      "name": "EMI1_CS0",
+      "endpoints": "U1.F14 to U2.H4"
+    },
+    {
+      "sourceTraceId": "source_trace_65",
+      "name": "EMI1_CS1",
+      "endpoints": "U1.F15 to U2.H3"
+    },
+    {
+      "sourceTraceId": "source_trace_66",
+      "name": "EMI1_CKE0",
+      "endpoints": "U1.D14 to U2.J4"
+    },
+    {
+      "sourceTraceId": "source_trace_67",
+      "name": "EMI1_CKE1",
+      "endpoints": "U1.C14 to U2.J5"
+    },
+    {
+      "sourceTraceId": "source_trace_68",
+      "name": "EMI2_DQ0",
+      "endpoints": "U1.C1 to U3.B2"
+    },
+    {
+      "sourceTraceId": "source_trace_69",
+      "name": "EMI2_DQ1",
+      "endpoints": "U1.D2 to U3.C2"
+    },
+    {
+      "sourceTraceId": "source_trace_70",
+      "name": "EMI2_DQ2",
+      "endpoints": "U1.F3 to U3.E2"
+    },
+    {
+      "sourceTraceId": "source_trace_71",
+      "name": "EMI2_DQ3",
+      "endpoints": "U1.G5 to U3.F2"
+    },
+    {
+      "sourceTraceId": "source_trace_72",
+      "name": "EMI2_DQ4",
+      "endpoints": "U1.F5 to U3.F4"
+    },
+    {
+      "sourceTraceId": "source_trace_73",
+      "name": "EMI2_DQ5",
+      "endpoints": "U1.E4 to U3.E4"
+    },
+    {
+      "sourceTraceId": "source_trace_74",
+      "name": "EMI2_DQ6",
+      "endpoints": "U1.F2 to U3.C4"
+    },
+    {
+      "sourceTraceId": "source_trace_75",
+      "name": "EMI2_DQ7",
+      "endpoints": "U1.G1 to U3.B4"
+    },
+    {
+      "sourceTraceId": "source_trace_76",
+      "name": "EMI2_DQ8",
+      "endpoints": "U1.J1 to U3.B11"
+    },
+    {
+      "sourceTraceId": "source_trace_77",
+      "name": "EMI2_DQ9",
+      "endpoints": "U1.K2 to U3.C11"
+    },
+    {
+      "sourceTraceId": "source_trace_78",
+      "name": "EMI2_DQ10",
+      "endpoints": "U1.K5 to U3.E11"
+    },
+    {
+      "sourceTraceId": "source_trace_79",
+      "name": "EMI2_DQ11",
+      "endpoints": "U1.K4 to U3.F11"
+    },
+    {
+      "sourceTraceId": "source_trace_80",
+      "name": "EMI2_DQ12",
+      "endpoints": "U1.M3 to U3.F9"
+    },
+    {
+      "sourceTraceId": "source_trace_81",
+      "name": "EMI2_DQ13",
+      "endpoints": "U1.L4 to U3.E9"
+    },
+    {
+      "sourceTraceId": "source_trace_82",
+      "name": "EMI2_DQ14",
+      "endpoints": "U1.M2 to U3.C9"
+    },
+    {
+      "sourceTraceId": "source_trace_83",
+      "name": "EMI2_DQ15",
+      "endpoints": "U1.H2 to U3.B9"
+    },
+    {
+      "sourceTraceId": "source_trace_84",
+      "name": "EMI2_DMI0",
+      "endpoints": "U1.E1 to U3.C3"
+    },
+    {
+      "sourceTraceId": "source_trace_85",
+      "name": "EMI2_DMI1",
+      "endpoints": "U1.L1 to U3.C10"
+    },
+    {
+      "sourceTraceId": "source_trace_86",
+      "name": "EMI2_DQS0_T",
+      "endpoints": "U1.C3 to U3.D3"
+    },
+    {
+      "sourceTraceId": "source_trace_87",
+      "name": "EMI2_DQS0_C",
+      "endpoints": "U1.D3 to U3.E3"
+    },
+    {
+      "sourceTraceId": "source_trace_88",
+      "name": "EMI2_DQS1_T",
+      "endpoints": "U1.H4 to U3.D10"
+    },
+    {
+      "sourceTraceId": "source_trace_89",
+      "name": "EMI2_DQS1_C",
+      "endpoints": "U1.H5 to U3.E10"
+    },
+    {
+      "sourceTraceId": "source_trace_90",
+      "name": "EMI2_CA0",
+      "endpoints": "U1.N5 to U3.H2"
+    },
+    {
+      "sourceTraceId": "source_trace_91",
+      "name": "EMI2_CA1",
+      "endpoints": "U1.P5 to U3.J2"
+    },
+    {
+      "sourceTraceId": "source_trace_92",
+      "name": "EMI2_CA2",
+      "endpoints": "U1.P4 to U3.H9"
+    },
+    {
+      "sourceTraceId": "source_trace_93",
+      "name": "EMI2_CA3",
+      "endpoints": "U1.N3 to U3.H10"
+    },
+    {
+      "sourceTraceId": "source_trace_94",
+      "name": "EMI2_CA4",
+      "endpoints": "U1.N1 to U3.H11"
+    },
+    {
+      "sourceTraceId": "source_trace_95",
+      "name": "EMI2_CA5",
+      "endpoints": "U1.P3 to U3.J11"
+    },
+    {
+      "sourceTraceId": "source_trace_96",
+      "name": "EMI2_CK_T",
+      "endpoints": "U1.R4 to U3.J8"
+    },
+    {
+      "sourceTraceId": "source_trace_97",
+      "name": "EMI2_CK_C",
+      "endpoints": "U1.R5 to U3.J9"
+    },
+    {
+      "sourceTraceId": "source_trace_98",
+      "name": "EMI2_CS0",
+      "endpoints": "U1.M5 to U3.H4"
+    },
+    {
+      "sourceTraceId": "source_trace_99",
+      "name": "EMI2_CS1",
+      "endpoints": "U1.N4 to U3.H3"
+    },
+    {
+      "sourceTraceId": "source_trace_100",
+      "name": "EMI2_CKE0",
+      "endpoints": "U1.R2 to U3.J4"
+    },
+    {
+      "sourceTraceId": "source_trace_101",
+      "name": "EMI2_CKE1",
+      "endpoints": "U1.R1 to U3.J5"
+    },
+    {
+      "sourceTraceId": "source_trace_102",
+      "name": "EMI3_DQ0",
+      "endpoints": "U1.AH2 to U3.AA2"
+    },
+    {
+      "sourceTraceId": "source_trace_103",
+      "name": "EMI3_DQ1",
+      "endpoints": "U1.AH1 to U3.Y2"
+    },
+    {
+      "sourceTraceId": "source_trace_104",
+      "name": "EMI3_DQ2",
+      "endpoints": "U1.AF5 to U3.V2"
+    },
+    {
+      "sourceTraceId": "source_trace_105",
+      "name": "EMI3_DQ3",
+      "endpoints": "U1.AD4 to U3.U2"
+    },
+    {
+      "sourceTraceId": "source_trace_106",
+      "name": "EMI3_DQ4",
+      "endpoints": "U1.AE5 to U3.U4"
+    },
+    {
+      "sourceTraceId": "source_trace_107",
+      "name": "EMI3_DQ5",
+      "endpoints": "U1.AF3 to U3.V4"
+    },
+    {
+      "sourceTraceId": "source_trace_108",
+      "name": "EMI3_DQ6",
+      "endpoints": "U1.AF2 to U3.Y4"
+    },
+    {
+      "sourceTraceId": "source_trace_109",
+      "name": "EMI3_DQ7",
+      "endpoints": "U1.AE1 to U3.AA4"
+    },
+    {
+      "sourceTraceId": "source_trace_110",
+      "name": "EMI3_DQ8",
+      "endpoints": "U1.AC1 to U3.AA11"
+    },
+    {
+      "sourceTraceId": "source_trace_111",
+      "name": "EMI3_DQ9",
+      "endpoints": "U1.AB2 to U3.Y11"
+    },
+    {
+      "sourceTraceId": "source_trace_112",
+      "name": "EMI3_DQ10",
+      "endpoints": "U1.AB4 to U3.V11"
+    },
+    {
+      "sourceTraceId": "source_trace_113",
+      "name": "EMI3_DQ11",
+      "endpoints": "U1.AA5 to U3.U11"
+    },
+    {
+      "sourceTraceId": "source_trace_114",
+      "name": "EMI3_DQ12",
+      "endpoints": "U1.Y5 to U3.U9"
+    },
+    {
+      "sourceTraceId": "source_trace_115",
+      "name": "EMI3_DQ13",
+      "endpoints": "U1.Y3 to U3.V9"
+    },
+    {
+      "sourceTraceId": "source_trace_116",
+      "name": "EMI3_DQ14",
+      "endpoints": "U1.Y2 to U3.Y9"
+    },
+    {
+      "sourceTraceId": "source_trace_117",
+      "name": "EMI3_DQ15",
+      "endpoints": "U1.AD2 to U3.AA9"
+    },
+    {
+      "sourceTraceId": "source_trace_118",
+      "name": "EMI3_DMI0",
+      "endpoints": "U1.AG1 to U3.Y3"
+    },
+    {
+      "sourceTraceId": "source_trace_119",
+      "name": "EMI3_DMI1",
+      "endpoints": "U1.AA1 to U3.Y10"
+    },
+    {
+      "sourceTraceId": "source_trace_120",
+      "name": "EMI3_DQS0_T",
+      "endpoints": "U1.AG4 to U3.W3"
+    },
+    {
+      "sourceTraceId": "source_trace_121",
+      "name": "EMI3_DQS0_C",
+      "endpoints": "U1.AG3 to U3.V3"
+    },
+    {
+      "sourceTraceId": "source_trace_122",
+      "name": "EMI3_DQS1_T",
+      "endpoints": "U1.AC4 to U3.W10"
+    },
+    {
+      "sourceTraceId": "source_trace_123",
+      "name": "EMI3_DQS1_C",
+      "endpoints": "U1.AC5 to U3.V10"
+    },
+    {
+      "sourceTraceId": "source_trace_124",
+      "name": "EMI3_CA0",
+      "endpoints": "U1.U6 to U3.R2"
+    },
+    {
+      "sourceTraceId": "source_trace_125",
+      "name": "EMI3_CA1",
+      "endpoints": "U1.U5 to U3.P2"
+    },
+    {
+      "sourceTraceId": "source_trace_126",
+      "name": "EMI3_CA2",
+      "endpoints": "U1.U3 to U3.R9"
+    },
+    {
+      "sourceTraceId": "source_trace_127",
+      "name": "EMI3_CA3",
+      "endpoints": "U1.W3 to U3.R10"
+    },
+    {
+      "sourceTraceId": "source_trace_128",
+      "name": "EMI3_CA4",
+      "endpoints": "U1.W1 to U3.R11"
+    },
+    {
+      "sourceTraceId": "source_trace_129",
+      "name": "EMI3_CA5",
+      "endpoints": "U1.V3 to U3.P11"
+    },
+    {
+      "sourceTraceId": "source_trace_130",
+      "name": "EMI3_CK_T",
+      "endpoints": "U1.T4 to U3.P8"
+    },
+    {
+      "sourceTraceId": "source_trace_131",
+      "name": "EMI3_CK_C",
+      "endpoints": "U1.T5 to U3.P9"
+    },
+    {
+      "sourceTraceId": "source_trace_132",
+      "name": "EMI3_CS0",
+      "endpoints": "U1.V5 to U3.R4"
+    },
+    {
+      "sourceTraceId": "source_trace_133",
+      "name": "EMI3_CS1",
+      "endpoints": "U1.V4 to U3.R3"
+    },
+    {
+      "sourceTraceId": "source_trace_134",
+      "name": "EMI3_CKE0",
+      "endpoints": "U1.U2 to U3.P4"
+    },
+    {
+      "sourceTraceId": "source_trace_135",
+      "name": "EMI3_CKE1",
+      "endpoints": "U1.U1 to U3.P5"
+    },
+    {
+      "sourceTraceId": "source_trace_136",
+      "name": "EMI0_RESET_N",
+      "endpoints": "U1.D29 to U2.T11"
+    },
+    {
+      "sourceTraceId": "source_trace_137",
+      "name": "EMI2_RESET_N",
+      "endpoints": "U1.B2 to U3.T11"
+    }
+  ]
+}

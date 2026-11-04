@@ -75,3 +75,30 @@ export function terminalViaCopperIsClear(
 ) {
   return createTerminalViaClearanceChecker(input, trace)(path)
 }
+
+/** Newly generated copper cannot grandfather an approach inside its via land. */
+export function generatedTraceTerminalViasAreClear(
+  input: SimpleRouteJson,
+  trace: Trace,
+) {
+  const local = { ...input, traces: [trace] }
+  let run: Wire[] = []
+  const clear = () =>
+    run.length < 2 ||
+    createTerminalViaClearanceChecker(
+      local,
+      { ...trace, route: run },
+      { preserveExistingApproach: false },
+    )(run)
+  for (const point of trace.route) {
+    if (
+      point.route_type !== "wire" ||
+      (run.length && run[0].layer !== point.layer)
+    ) {
+      if (!clear()) return false
+      run = []
+    }
+    if (point.route_type === "wire") run.push(point)
+  }
+  return clear()
+}

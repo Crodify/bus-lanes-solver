@@ -1,0 +1,16 @@
+{
+  "scope": "pair",
+  "inputSha256": "6fb1f6dd4c6871b12818bbddc5dfae179d35a432b707b8e5b7984f0f86b3050d",
+  "signals": [
+    {
+      "sourceTraceId": "source_trace_0",
+      "name": "EMI1_DQS0_T",
+      "endpoints": "U1.C5 to U2.D3"
+    },
+    {
+      "sourceTraceId": "source_trace_1",
+      "name": "EMI1_DQS0_C",
+      "endpoints": "U1.D5 to U2.E3"
+    }
+  ]
+}

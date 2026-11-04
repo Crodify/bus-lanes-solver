@@ -1,5 +1,6 @@
 import { validateRoutedCopperDrc } from "@tscircuit/fanout-solver"
 import { CopperConflictIndex } from "./copper-conflict-index"
+import { nativeLengthWindows } from "./native-length-windows"
 import { length, segmentDistance } from "./geometry"
 import { GridHistoryProjector } from "./grid-visibility"
 import { NativeCarrierRouter } from "./native-carrier-router"
@@ -12,17 +13,31 @@ import { pairCouplingReports } from "./pair-coupling"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { sharedPairSpacingReports } from "./shared-pair-spacing"
 import { nativeSignalGeometryIsValid } from "./native-signal-geometry"
+import { joinedSignalGeometryIsValid } from "./joined-signal-geometry"
 import { fixedCopper, VectorScene } from "./vector-scene"
 import type { Connection, SimpleRouteJson, Trace } from "./types"
 
 export interface NativeCarrierMatchingOptions {
+  /** New pinned cohorts use self-clearance history and retain existing tuning
+   * banks during repair. Existing strategies preserve their search ordering;
+   * final acceptance always checks joined geometry in both modes. */
+  adaptiveRepair?: boolean
+  /** Preserve a freshly cleared topology while adding its timing banks. */
+  preserveExistingRoutes?: boolean
   /** Genuine native owners of immutable copper, excluded from routing requests. */
   fixedConnections?: Connection[]
+  /** Initial timing targets for buses without a differential length anchor. */
+  busTargetLengths?: Record<string, number>
+  /** Explore shortest/congestion paths first; finished copper must still meet
+   * the same maximum lengths and skew windows. */
+  deferSearchLengthBound?: boolean
+  routingBounds?: SimpleRouteJson["bounds"]
   gridStep?: number
   fineGridStep?: number
   maxPasses?: number
   maxLocalPasses?: number
   maxExpansionsPerRoute?: number
+  maxTuningCandidates?: number
   /** Bound speculative hard-only repairs; soft negotiation retains its full budget. */
   maxStrictExpansionsPerRoute?: number
 }
@@ -57,29 +72,12 @@ export function* matchNativeCarrierSignals(
     connections: original.connections.filter((c) => !pairedNames.has(c.name)),
     traces: [...(original.traces ?? []), ...paired],
   }
-  const minimums = new Map<string, number>(),
-    maximums = new Map<string, number>()
-  for (const bus of original.buses ?? []) {
-    const anchors = paired.filter((t) =>
-      bus.connectionNames.includes(t.connection_name!),
-    )
-    if (!anchors.length)
-      throw Error(
-        `Native matching bus ${bus.busId} needs a paired length anchor`,
-      )
-    const ceiling = Math.min(
-      Math.max(...anchors.map((t) => length(t.route))),
-      bus.maxLength ?? Infinity,
-    )
-    const floor = Math.max(
-      bus.minLength ?? 0,
-      ceiling - (bus.maxLengthSkew ?? 0),
-    )
-    for (const name of bus.connectionNames) {
-      maximums.set(name, Math.min(maximums.get(name) ?? Infinity, ceiling))
-      minimums.set(name, Math.max(minimums.get(name) ?? 0, floor))
-    }
-  }
+  const windows = nativeLengthWindows(
+    original,
+    paired,
+    options.busTargetLengths,
+  )
+  const { minimums, maximums } = windows
   const clearance =
     original.minTraceToPadEdgeClearance ??
     original.defaultObstacleMargin ??
@@ -95,6 +93,15 @@ export function* matchNativeCarrierSignals(
       physicalCache.set(t, copper)
     }
     return copper
+  }
+  const geometryCache = new WeakMap<Trace, boolean>()
+  const geometryValid = (trace: Trace) => {
+    let valid = geometryCache.get(trace)
+    if (valid === undefined) {
+      valid = joinedSignalGeometryIsValid({ input: original, trace })
+      geometryCache.set(trace, valid)
+    }
+    return valid
   }
   const graph = (traces: Trace[]) => {
     const copper = traces.map(physical),
@@ -116,7 +123,9 @@ export function* matchNativeCarrierSignals(
     traces
       .filter(
         (t) =>
-          !nativeSignalGeometryIsValid(t) ||
+          !(options.adaptiveRepair
+            ? geometryValid(t)
+            : nativeSignalGeometryIsValid(t)) ||
           (minimums.has(t.connection_name!) &&
             (length(t.route) < minimums.get(t.connection_name!)! - 1e-7 ||
               length(t.route) > maximums.get(t.connection_name!)! + 1e-7)),
@@ -126,7 +135,7 @@ export function* matchNativeCarrierSignals(
     const complete = [...paired, ...traces]
     if (
       complete.length !== original.connections.length ||
-      !complete.every(nativeSignalGeometryIsValid)
+      !complete.every(geometryValid)
     )
       return false
     if (
@@ -188,13 +197,18 @@ export function* matchNativeCarrierSignals(
           local.minTraceWidth,
           fixed,
         ),
-        { bounds: local.bounds, step },
+        { bounds: options.routingBounds ?? local.bounds, step },
       )
     const history = [
         new Float32Array(projector.cellCount),
         new Float32Array(projector.cellCount),
       ],
-      router = new NativeCarrierRouter(local, step, history)
+      router = new NativeCarrierRouter(
+        local,
+        step,
+        history,
+        options.routingBounds,
+      )
     const routed = new Map(
       seed
         .filter((t) => !frozenNames.has(t.connection_name))
@@ -209,18 +223,61 @@ export function* matchNativeCarrierSignals(
         (a, b) => (trouble.get(b.name) ?? 0) - (trouble.get(a.name) ?? 0),
       )) {
         if (pass >= 2 && !trouble.has(c.name)) continue
+        progress?.({
+          stage: `${stage}_route`,
+          pass,
+          collisions: 0,
+          unfinished: [c.name],
+          traces: [...paired, ...frozen, ...routed.values()],
+        })
         const old = routed.get(c.name)
         routed.delete(c.name)
-        const others = [...routed.values()],
-          maximum = maximums.get(c.name) ?? Infinity
+        const others = [...routed.values()]
+        let maximum = maximums.get(c.name) ?? Infinity
         let candidate: Trace | null = null
+        const clearsOthers = (trace: Trace) =>
+          others.every(
+            (other) =>
+              !index.firstConflict(
+                physical(trace),
+                physical(other),
+                clearance - 1e-8,
+              ),
+          )
+        if (
+          options.preserveExistingRoutes &&
+          old &&
+          joinedSignalGeometryIsValid({ input: original, trace: old }) &&
+          clearsOthers(old)
+        ) {
+          const measured = length(old.route)
+          if (
+            measured >= (minimums.get(c.name) ?? 0) - 1e-7 &&
+            measured <= maximum + 1e-7
+          )
+            candidate = old
+          else if (measured < (minimums.get(c.name) ?? 0)) {
+            const extended = tuneNativeCarrierSignal(
+              { ...local, traces: [...local.traces!, ...others] },
+              c,
+              old,
+              minimums.get(c.name)!,
+              maximum,
+              [],
+              undefined,
+              options.maxTuningCandidates,
+              true,
+            )
+            if (extended && clearsOthers(extended)) candidate = extended
+          }
+        }
         const search = {
           softTraces: others,
           softPenalty: 5 + pass * 5,
-          maxLength: maximum,
+          maxLength: options.deferSearchLengthBound ? undefined : maximum,
           maxExpansions: options.maxExpansionsPerRoute,
         }
-        if (pass >= 1) {
+        if (!candidate && pass >= 1) {
           const strict = yield* router.route(c, {
             ...search,
             strict: true,
@@ -239,6 +296,8 @@ export function* matchNativeCarrierSignals(
                   minimums.get(c.name)!,
                   maximum,
                   [],
+                  undefined,
+                  options.maxTuningCandidates,
                 )
               : cleanNativeCarrierSignal(hard, c, strict.trace, [], true)
             if (
@@ -256,8 +315,38 @@ export function* matchNativeCarrierSignals(
           }
         }
         if (!candidate) {
-          const raw = yield* router.route(c, search)
+          let raw = yield* router.route(c, search)
+          // A congestion-cheap detour is not evidence that the whole bus must
+          // become longer. Preserve its timing window when a more expensive,
+          // length-bounded alternative is available.
+          if (
+            raw &&
+            options.deferSearchLengthBound &&
+            Number.isFinite(maximum) &&
+            length(raw.trace.route) > maximum + 1e-7
+          ) {
+            const bounded = yield* router.route(c, {
+              ...search,
+              maxLength: maximum,
+            })
+            if (bounded) raw = bounded
+          }
           if (raw) {
+            if (options.deferSearchLengthBound) {
+              const clean = cleanNativeCarrierSignal(
+                local,
+                c,
+                raw.trace,
+                others,
+                true,
+              )
+              if (clean && windows.grow(c.name, length(clean.route))) {
+                best = null
+                bestMetric = Infinity
+                stale = 0
+              }
+              maximum = maximums.get(c.name) ?? Infinity
+            }
             candidate = minimums.has(c.name)
               ? tuneNativeCarrierSignal(
                   local,
@@ -267,8 +356,28 @@ export function* matchNativeCarrierSignals(
                   maximum,
                   others,
                   raw.bankCost,
+                  options.maxTuningCandidates,
                 )
               : cleanNativeCarrierSignal(local, c, raw.trace, others, true)
+            if (
+              options.adaptiveRepair &&
+              !candidate &&
+              old &&
+              minimums.has(c.name) &&
+              length(old.route) < minimums.get(c.name)! - 1e-8 &&
+              geometryValid(old)
+            )
+              candidate = tuneNativeCarrierSignal(
+                local,
+                c,
+                old,
+                minimums.get(c.name)!,
+                maximum,
+                others,
+                raw.bankCost,
+                options.maxTuningCandidates,
+                true,
+              )
             // A hard-clear shortest path can have no room for its timing bank.
             // Retrying it unchanged cannot improve the state: charge its carrier
             // corridor so the next search explores a different tunable topology.
@@ -322,9 +431,31 @@ export function* matchNativeCarrierSignals(
             10,
           )
       }
-      const missing = unfinished(all)
+      const missing = unfinished(
+        options.adaptiveRepair ? [...frozen, ...all] : all,
+      )
       for (const name of missing)
         trouble.set(name, (trouble.get(name) ?? 0) + 1)
+      // An isolated returning arm has no different-net conflict to charge.
+      // Without feedback the shortest-path search repeats that same invalid
+      // geometry forever, even though it is correctly marked unfinished.
+      for (const trace of options.adaptiveRepair ? all : []) {
+        if (geometryValid(trace)) continue
+        for (const wire of physical(trace)) {
+          const plane = wire.layer === input.allowedLayers![0] ? 1 : 0
+          if (wire.layer !== "top" && plane !== 1) continue
+          projector.penalizeIntersection(
+            history[plane],
+            wire.a,
+            wire.b,
+            wire.a,
+            wire.b,
+            wire.radius + clearance,
+            true,
+            2,
+          )
+        }
+      }
       const state = {
           traces: [...frozen, ...all],
           collisions: hits.length,
@@ -342,6 +473,9 @@ export function* matchNativeCarrierSignals(
         best = structuredClone(state)
         stale = 0
       } else stale++
+      // A grown unanchored timing window can invalidate frozen bus members.
+      // Return immediately so the next repair closure can unfreeze them.
+      if (missing.some((name) => frozenNames.has(name))) return state
       if (!hits.length && !missing.length) return state
       if (stale >= 5 && best && metric > bestMetric) {
         routed.clear()
@@ -351,6 +485,9 @@ export function* matchNativeCarrierSignals(
         trouble = new Map([...routed.keys()].map((n) => [n, 1]))
         stale = 0
       }
+      // Expand a stalled repair closure instead of repeatedly searching with
+      // the same neighboring banks frozen in place.
+      if (options.preserveExistingRoutes && frozen.length && stale >= 2) break
       if (
         stage === "native_global_matching" &&
         best &&
@@ -363,13 +500,74 @@ export function* matchNativeCarrierSignals(
     }
     return best
   }
-  const firstState = yield* negotiate(
-    initial,
-    [],
-    options.gridStep ?? original.minTraceWidth,
-    options.maxPasses ?? 48,
-    "native_global_matching",
-  )
+  let firstState: State | null = null
+  if (
+    options.preserveExistingRoutes &&
+    initial.length === input.connections.length &&
+    new Set(initial.map((trace) => trace.connection_name)).size ===
+      initial.length &&
+    input.connections.every((c) =>
+      initial.some((trace) => trace.connection_name === c.name),
+    ) &&
+    initial.every((trace) =>
+      joinedSignalGeometryIsValid({ input: original, trace }),
+    ) &&
+    graph(initial).length === 0
+  ) {
+    const prepared = new Map(
+      initial.map((trace) => [trace.connection_name!, trace]),
+    )
+    const deficit = (name: string) =>
+      (minimums.get(name) ?? 0) - length(prepared.get(name)!.route)
+    for (const c of [...input.connections].sort(
+      (a, b) => deficit(b.name) - deficit(a.name),
+    )) {
+      const old = prepared.get(c.name)!
+      if (!minimums.has(c.name) || deficit(c.name) <= 1e-7) continue
+      const others = [...prepared.values()].filter((trace) => trace !== old)
+      const tuned = tuneNativeCarrierSignal(
+        { ...input, traces: [...input.traces!, ...others] },
+        c,
+        old,
+        minimums.get(c.name)!,
+        maximums.get(c.name)!,
+        [],
+        undefined,
+        options.maxTuningCandidates,
+        true,
+      )
+      if (
+        tuned &&
+        joinedSignalGeometryIsValid({ input: original, trace: tuned }) &&
+        others.every(
+          (other) =>
+            !index.firstConflict(
+              physical(tuned),
+              physical(other),
+              clearance - 1e-8,
+            ),
+        )
+      )
+        prepared.set(c.name, tuned)
+      yield
+    }
+    const traces = [...prepared.values()]
+    firstState = { traces, collisions: 0, unfinished: unfinished(traces) }
+    progress?.({
+      ...firstState,
+      traces: [...paired, ...traces],
+      stage: "native_clear_topology_tuning",
+      pass: 0,
+    })
+  } else {
+    firstState = yield* negotiate(
+      initial,
+      [],
+      options.gridStep ?? original.minTraceWidth,
+      options.maxPasses ?? 48,
+      "native_global_matching",
+    )
+  }
   if (!firstState) return null
   let state: State = firstState
   if (!state.collisions && !state.unfinished.length && valid(state.traces))
@@ -418,6 +616,9 @@ export function* matchNativeCarrierSignals(
       options.maxLocalPasses ?? 48,
       `native_local_matching_${repair}`,
     )
+    // Compare both states against the current windows, including any growth
+    // during this repair. A cached earlier deficit count is no longer valid.
+    state.unfinished = unfinished(state.traces)
     if (
       next &&
       next.collisions + 20 * next.unfinished.length <=

@@ -1,4 +1,9 @@
+import { effectiveCarrierLayers } from "./effective-carrier-layers"
 import { nativeGroupsEligible, routeNativeGroups } from "./route-native-groups"
+import {
+  pinnedNativeBusesEligible,
+  routePinnedNativeBuses,
+} from "./route-pinned-native-buses"
 import {
   SingleLayerConnectivitySolver,
   type SingleLayerConnectivityOptions,
@@ -63,7 +68,8 @@ import type { SimpleRouteJson, SolverOptions, Trace } from "./types"
 export interface BusLanesPipelineOptions extends SolverOptions {
   fanout?: "auto" | "none"
   /** Elapsed routing budget, checked at each cooperative solver step. Native
-   * multi-group routing defaults to five minutes, including failed alternatives. */
+   * multi-group routing defaults to five minutes, including failed alternatives.
+   * Pinned native cohorts receive this budget per occupied inner carrier. */
   maxRoutingTimeMs?: number
   /** Default matched goal includes timing and differential coupling. Connectivity
    * explicitly requests only pad-to-pad routing and copper DRC on one carrier. */
@@ -435,9 +441,15 @@ export class BusLanesPipelineSolver extends BaseSolver {
     // Native grouped/carrier matching uses fixed length windows. The generated
     // fanout path instead compacts paired tuning after matching; keep numerical
     // room for that cleanup without changing the native matching strategies.
+    const usesPinnedNativeRouting =
+      options.fanout !== "none" &&
+      !nativeGroupsEligible(routingInput) &&
+      !nativeSingleCarrierEligible(routingInput) &&
+      pinnedNativeBusesEligible(routingInput)
     const usesNativeMatching =
       options.fanout !== "none" &&
-      (nativeGroupsEligible(routingInput) ||
+      (usesPinnedNativeRouting ||
+        nativeGroupsEligible(routingInput) ||
         nativeSingleCarrierEligible(routingInput))
     if (!usesNativeMatching)
       routingInput = withSkewRoundoffReserve(routingInput)
@@ -449,7 +461,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
     // stages; an explicitly supplied search budget remains authoritative.
     const searchBudget =
       canRouteOnPadLayers(this.routingInput) ||
-      nativeSingleCarrierEligible(this.routingInput)
+      nativeSingleCarrierEligible(this.routingInput) ||
+      usesPinnedNativeRouting
         ? 2000000
         : 200000
     this.MAX_ITERATIONS =
@@ -473,30 +486,37 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.phase = "connectivity_route"
     } else if (
       options.fanout !== "none" &&
-      nativeGroupsEligible(this.routingInput)
+      (usesPinnedNativeRouting || nativeGroupsEligible(this.routingInput))
     ) {
       this.nativeGroupsActive = true
       this.routingDeadline =
-        performance.now() + (options.maxRoutingTimeMs ?? 300000)
-      this.nativeSingleCarrier = routeNativeGroups(
-        this.routingInput,
-        options.singleCarrier,
-        (state) => {
-          this.phase = state.stage
-          this.traces = state.traces
-          this.stats = {
-            ...this.stats,
-            nativeGroups: {
-              stage: state.stage,
-              pass: state.pass,
-              collisions: state.collisions,
-              unfinished: state.unfinished,
-              groupName: state.groupName,
-              completedConnections: state.completedConnections,
-            },
-          }
-        },
-      )
+        performance.now() +
+        (options.maxRoutingTimeMs ??
+          300000 *
+            (usesPinnedNativeRouting
+              ? new Set(
+                  this.routingInput.connections.flatMap((c) =>
+                    effectiveCarrierLayers(this.routingInput, c),
+                  ),
+                ).size || 1
+              : 1))
+      this.nativeSingleCarrier = (
+        usesPinnedNativeRouting ? routePinnedNativeBuses : routeNativeGroups
+      )(this.routingInput, options.singleCarrier, (state) => {
+        this.phase = state.stage
+        this.traces = state.traces
+        this.stats = {
+          ...this.stats,
+          nativeGroups: {
+            stage: state.stage,
+            pass: state.pass,
+            collisions: state.collisions,
+            unfinished: state.unfinished,
+            groupName: state.groupName,
+            completedConnections: state.completedConnections,
+          },
+        }
+      })
       this.phase = "native_group_escapes"
     } else if (
       options.fanout !== "none" &&

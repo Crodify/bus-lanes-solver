@@ -1,0 +1,175 @@
+{
+  "case": "byte0",
+  "solverPath": "lib/index.ts",
+  "inputSha256": "c090d06d00e6eb80f55748c8d420a306a893fa0c2be1cf29f4e97de4687a347f",
+  "outputSha256": "fe8018feb976e3ad2b34c67b1bd534b6e99922bdd8cf43063217fbb8a34b0e4c",
+  "inputUnchanged": true,
+  "timeoutMs": 60000,
+  "solveMilliseconds": 14666.400256,
+  "requestedSignals": 11,
+  "obstacles": 1446,
+  "solved": true,
+  "failed": false,
+  "phase": "solved",
+  "failureCode": null,
+  "error": null,
+  "iterations": 227,
+  "accepted": true,
+  "acceptedSignals": 11,
+  "stats": {
+    "carrierStrategy": "preferred",
+    "nativeGroups": {
+      "stage": "native_global_matching",
+      "pass": 1,
+      "collisions": 0,
+      "unfinished": [],
+      "groupName": "inner2",
+      "completedConnections": 2
+    },
+    "optimizationStoppedEarly": false
+  },
+  "validation": {
+    "accepted": true,
+    "complete": true,
+    "connectivity": {
+      "valid": true,
+      "checkedConnectionCount": 11,
+      "connectedConnectionCount": 11,
+      "checkedEndpointCount": 22,
+      "connectedEndpointCount": 22,
+      "issues": []
+    },
+    "drc": {
+      "valid": true,
+      "checkedTraceCount": 11,
+      "checkedSegmentCount": 13991,
+      "checkedViaCount": 22,
+      "issues": []
+    },
+    "viaInPad": [],
+    "invalidGeometry": [],
+    "buses": [
+      {
+        "busId": "EMI1_BYTE0",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.5,
+        "skewMm": 0.500000000000064,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_0",
+            "carrierLengthMm": 23.599999999999998,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.599999999999998
+          },
+          {
+            "name": "source_trace_1",
+            "carrierLengthMm": 23.599999999999937,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.599999999999937
+          },
+          {
+            "name": "source_trace_2",
+            "carrierLengthMm": 23.600000000000037,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.600000000000037
+          },
+          {
+            "name": "source_trace_3",
+            "carrierLengthMm": 23.600000000000065,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.600000000000065
+          },
+          {
+            "name": "source_trace_4",
+            "carrierLengthMm": 23.6,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.6
+          },
+          {
+            "name": "source_trace_5",
+            "carrierLengthMm": 23.6,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.6
+          },
+          {
+            "name": "source_trace_6",
+            "carrierLengthMm": 23.599999999999977,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.599999999999977
+          },
+          {
+            "name": "source_trace_7",
+            "carrierLengthMm": 23.600000000000033,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.600000000000033
+          },
+          {
+            "name": "source_trace_8",
+            "carrierLengthMm": 23.599999999999994,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.599999999999994
+          },
+          {
+            "name": "source_trace_9",
+            "carrierLengthMm": 24.1,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 24.1
+          },
+          {
+            "name": "source_trace_10",
+            "carrierLengthMm": 23.999999999999986,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.999999999999986
+          }
+        ]
+      }
+    ],
+    "pairs": [
+      {
+        "busId": "pair_0",
+        "minLengthMm": null,
+        "aboveMinimumLength": true,
+        "maxLengthMm": null,
+        "withinLengthLimit": true,
+        "toleranceMm": 0.1,
+        "skewMm": 0.10000000000001563,
+        "matched": true,
+        "lengths": [
+          {
+            "name": "source_trace_9",
+            "carrierLengthMm": 24.1,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 24.1
+          },
+          {
+            "name": "source_trace_10",
+            "carrierLengthMm": 23.999999999999986,
+            "fixedLengthMm": 0,
+            "totalLengthMm": 23.999999999999986
+          }
+        ]
+      }
+    ],
+    "coupling": [
+      {
+        "connectionNames": ["source_trace_9", "source_trace_10"],
+        "applicable": true,
+        "matched": true,
+        "maxExteriorEdgeGapMm": 0.08000000000000235,
+        "maxSamplingErrorMm": 0.0009996843434343485,
+        "separatedExteriorLengthMm": 0
+      }
+    ]
+  },
+  "solverRevision": "b556e6d5cd515eff7a0768aea5aafce31e054434",
+  "runtime": "Bun 1.4.4, Linux x64",
+  "environment": {
+    "BUN_JSC_forceRAMSize": "2147483648",
+    "BUN_JSC_miniVMHeapGrowthFactor": "1.05"
+  },
+  "measurementNote": "Fresh solve; development diagnostics ran concurrently. No speedup claim."
+}

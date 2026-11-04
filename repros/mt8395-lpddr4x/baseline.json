@@ -1,0 +1,62 @@
+{
+  "solverRevision": "005bee4ae0af17cea30108e4f57d58cd4b2dc430",
+  "runtime": "Bun 1.4.4",
+  "platform": "Linux-7.1.4-arch1-1-x86_64-with-glibc2.44",
+  "capturedCoreVersion": "0.0.2252",
+  "captureMethod": "native autorouting:start, no algorithmFn; interrupted before router construction",
+  "nativeCapturesMatchPriorInputs": true,
+  "runs": [
+    {
+      "case": "pair",
+      "inputSha256": "6fb1f6dd4c6871b12818bbddc5dfae179d35a432b707b8e5b7984f0f86b3050d",
+      "inputUnchanged": true,
+      "timeoutMs": 30000,
+      "solveMilliseconds": 5363.776774,
+      "requestedSignals": 2,
+      "obstacles": 1446,
+      "solved": false,
+      "failed": true,
+      "phase": "failed",
+      "failureCode": "local_dogbone_failed",
+      "error": "Error: Insufficient tuning clearance for source_trace_0",
+      "iterations": 1748,
+      "accepted": false,
+      "acceptedSignals": 0
+    },
+    {
+      "case": "byte0",
+      "inputSha256": "c090d06d00e6eb80f55748c8d420a306a893fa0c2be1cf29f4e97de4687a347f",
+      "inputUnchanged": true,
+      "timeoutMs": 60000,
+      "solveMilliseconds": 60001.297287,
+      "requestedSignals": 11,
+      "obstacles": 1446,
+      "solved": false,
+      "failed": true,
+      "phase": "failed",
+      "failureCode": "routing_timeout",
+      "error": "Routing exceeded its elapsed-time budget",
+      "iterations": 121331,
+      "accepted": false,
+      "acceptedSignals": 0
+    },
+    {
+      "case": "full",
+      "inputSha256": "be7707c9188ba888fc551fcc341b424eefdb5c65e2ab9e593c3a9829b1fe4221",
+      "inputUnchanged": true,
+      "timeoutMs": 60000,
+      "solveMilliseconds": 60054.698722,
+      "requestedSignals": 138,
+      "obstacles": 1446,
+      "solved": false,
+      "failed": true,
+      "phase": "failed",
+      "failureCode": "routing_timeout",
+      "error": "Routing exceeded its elapsed-time budget",
+      "iterations": 132432,
+      "accepted": false,
+      "acceptedSignals": 0
+    }
+  ],
+  "comparisonNote": "Fresh exact-input runs of the repository source; elapsed-time budgets are not a proof of unroutability. No normalized or connectivity-only variant is included."
+}

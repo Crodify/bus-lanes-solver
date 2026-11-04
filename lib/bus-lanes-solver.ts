@@ -709,7 +709,13 @@ export class BusLanesSolver extends BaseSolver {
                 quickOriginal || compactCorridors.has(corridor)
               this.traces = tuneCoupledLengths(
                 { input, traces: candidate },
-                { maxCandidates, packMeanders, packageOnlyPairTuning },
+                {
+                  maxCandidates,
+                  packMeanders,
+                  packageOnlyPairTuning,
+                  protectPairedTerminalVias:
+                    this.options.protectPairedTerminalVias,
+                },
               )
             } else {
               this.traces = tuneSmoothLengths(input, candidate, targets, {

@@ -4,6 +4,7 @@
     "includes": [
       "**",
       "!tests/fixtures/**",
+      "!repros/mt8395-lpddr4x/results/**",
       "!examples/data/**",
       "!examples/fanout-solver-outputs/**",
       "!cosmos-export/**",

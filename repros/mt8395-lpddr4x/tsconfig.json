@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.json",
+  "include": ["input.ts", "run.ts", "snapshot.ts", "validate.ts"],
+  "exclude": ["source", "results"]
+}

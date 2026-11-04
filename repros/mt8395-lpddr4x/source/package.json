@@ -1,0 +1,20 @@
+{
+  "dependencies": {
+    "@tscircuit/bus-lanes-solver": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.40.tgz",
+    "@tscircuit/capacity-autorouter": "0.0.1030",
+    "@tscircuit/fanout-solver": "0.0.81",
+    "react": "19.3.1",
+    "tscircuit": "0.0.3057"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "typescript": "5.9.3",
+    "@resvg/resvg-js": "2.6.2"
+  },
+  "name": "mt8395-lpddr4x-core-capture",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "capture": "bun capture.tsx"
+  }
+}

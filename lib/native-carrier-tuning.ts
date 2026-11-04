@@ -85,8 +85,12 @@ export function tuneNativeCarrierSignal(
   maximum: number,
   soft: Trace[],
   bankCost?: (trace: Trace) => number,
+  maxCandidates = 65536,
+  preserveExistingBanks = false,
 ): Trace | null {
-  const trace = cleanNativeCarrierSignal(native, connection, raw, soft, false)
+  const trace = preserveExistingBanks
+    ? raw
+    : cleanNativeCarrierSignal(native, connection, raw, soft, false)
   if (!trace) return null
   const [a, b] = trace.route.flatMap((p, i) =>
     p.route_type === "via" ? [i] : [],
@@ -138,16 +142,29 @@ export function tuneNativeCarrierSignal(
   }
   const hard = fixedCopper(input),
     softCopper = fixedCopper({ ...input, obstacles: [], traces: soft })
-  const path = reduceOrdinaryTurns(
-    route,
-    new VectorScene(input, c, native.minTraceWidth, [...hard, ...softCopper]),
-  )
+  // A grown timing window can need only a small second bank. Preserve the
+  // existing sampled curves; shortening them as ordinary raster corners loses
+  // their shape and prevents a previously feasible lane from being repaired.
+  const path = preserveExistingBanks
+    ? route
+    : reduceOrdinaryTurns(
+        route,
+        new VectorScene(input, c, native.minTraceWidth, [
+          ...hard,
+          ...softCopper,
+        ]),
+      )
   try {
     const clean = chamferOrdinaryCorners(
       input,
       [
         {
           ...trace,
+          curvedSegments: preserveExistingBanks
+            ? trace.curvedSegments
+                ?.filter((i) => i > a + 1 && i < b)
+                .map((i) => i - a - 1)
+            : undefined,
           route: path.map((p) => ({
             ...p,
             route_type: "wire" as const,
@@ -167,7 +184,7 @@ export function tuneNativeCarrierSignal(
         candidateScore: bankCost,
         alignPeriods: true,
         packMeanders: true,
-        maxCandidates: 65536,
+        maxCandidates,
       },
     )[0]
     const full = {
