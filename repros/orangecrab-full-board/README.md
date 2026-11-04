@@ -7,7 +7,7 @@ bun install
 bun test tests/repros/orangecrab-full-board.test.ts --timeout 120000
 ```
 
-This replays the unchanged [source-derived capture](../../tests/fixtures/orangecrab-r0.2.1/README.md) through `BusLanesPipelineSolver`, with only a routing-time budget. It requests the original eleven byte-zero connections while retaining 1,430 obstacles and 996 fixed wire runs. The shared source fixture preserves all 163 PCB components and the six-layer board, and removes exactly the already-recorded 19 PCB trace records and 22 vias.
+This replays the unchanged [source-derived capture](../../tests/fixtures/orangecrab-r0.2.1/README.md) through `BusLanesPipelineSolver` with its default options. It requests the original eleven byte-zero connections while retaining 1,430 obstacles and 996 fixed wire runs. The shared source fixture preserves all 163 PCB components and the six-layer board, and removes exactly the already-recorded 19 PCB trace records and 22 vias. The test waits for search exhaustion rather than imposing an additional elapsed routing cutoff; its test timeout remains 120 seconds.
 
 The original filled pours remain visible reference geometry; the captured SRJ does not model refilled zones. Any eventual routing-model completion still requires native KiCad refill and board-level validation before fabrication acceptance.
 

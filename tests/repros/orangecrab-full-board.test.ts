@@ -11,9 +11,8 @@ test("the retained full-board OrangeCrab byte still fails coupled package approa
   expect(input.obstacles).toHaveLength(1430)
   expect(input.traces).toHaveLength(996)
 
-  const solver = new BusLanesPipelineSolver(input, {
-    maxRoutingTimeMs: 60_000,
-  })
+  // Reproduce search exhaustion rather than a runner-dependent elapsed timeout.
+  const solver = new BusLanesPipelineSolver(input)
   solver.solve()
   expect(solver.solved).toBe(false)
   expect(solver.failed).toBe(true)
