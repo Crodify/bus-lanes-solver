@@ -256,6 +256,28 @@ export function* expandedSignalSites(
     candidates.sort(
       (a, b) => distance(pad, a) - distance(pad, b) || a.x - b.x || a.y - b.y,
     )
+    const gridCandidateCount = candidates.length
+    // Fixed copper can leave a drill-clear escape between the BGA grid sites.
+    // The annulus may join its own pad; the drill must remain outside it.
+    const padToViaDistance = (owner.width + hole) / 2 + 1e-5
+    if (owner.shape === "circle" && padToViaDistance <= surfaceLimit) {
+      const diagonal = Math.SQRT1_2
+      for (const [x, y] of [
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+        [0, -1],
+        [diagonal, diagonal],
+        [-diagonal, diagonal],
+        [-diagonal, -diagonal],
+        [diagonal, -diagonal],
+      ])
+        candidates.push({
+          x: pad.x + x * padToViaDistance,
+          y: pad.y + y * padToViaDistance,
+          layer: targetLayer,
+        })
+    }
     const viaScenes = physical.map(
       (layer) =>
         new VectorScene(
@@ -271,7 +293,8 @@ export function* expandedSignalSites(
           fixed,
         ),
     )
-    for (const point of candidates) {
+    for (const [index, point] of candidates.entries()) {
+      if (index === gridCandidateCount && ends[end].length) break
       if (viaScenes.some((scene) => !scene.visible(point, point))) continue
       if (
         existingVias.some(
