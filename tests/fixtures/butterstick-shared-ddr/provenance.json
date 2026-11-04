@@ -1,0 +1,21 @@
+{
+  "board": "ButterStick r1.0",
+  "sourceUrl": "https://github.com/butterstick-fpga/butterstick-hardware/blob/0694ddfa9824a07f0c6c6981186e45f80187659c/hardware/ButterStick_r1.0/ButterStick.kicad_pcb",
+  "sourceSha256": "2b25f3efcf32b8687f18ddfea6ccf379134ebd4b4e4285b92e126215a59aeeef",
+  "inputSha256": "0bc7e96459681b7eedb96e58fd03ba4799ef1eff7d9de29b654876e7388c3c80",
+  "captureRuntime": {
+    "tscircuit": "0.0.3091",
+    "core": "0.0.2272"
+  },
+  "scope": "Exact first-byte SRJ emitted by core from the native ButterStick DDR subsystem. All 581 pads on seven incident components retained. Eight shared DQ nets, each with FPGA U4 and RAM U11/U12 endpoints. No pads, placements, routing rules, copper layers or physical terminals changed. Existing board copper removed; roundrect pads use conservative rotated rectangles. No timing constraints added.",
+  "selectedSignals": [
+    "DQ0",
+    "DQ1",
+    "DQ2",
+    "DQ3",
+    "DQ4",
+    "DQ5",
+    "DQ6",
+    "DQ7"
+  ]
+}
