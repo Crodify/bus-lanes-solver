@@ -87,6 +87,15 @@ export function* matchNativeCarrierSignals(
     }
     return copper
   }
+  const geometryCache = new WeakMap<Trace, boolean>()
+  const geometryValid = (trace: Trace) => {
+    let valid = geometryCache.get(trace)
+    if (valid === undefined) {
+      valid = joinedSignalGeometryIsValid({ input: original, trace })
+      geometryCache.set(trace, valid)
+    }
+    return valid
+  }
   const graph = (traces: Trace[]) => {
     const copper = traces.map(physical),
       hits: Array<
@@ -107,7 +116,7 @@ export function* matchNativeCarrierSignals(
     traces
       .filter(
         (t) =>
-          !joinedSignalGeometryIsValid({ input: original, trace: t }) ||
+          !geometryValid(t) ||
           (minimums.has(t.connection_name!) &&
             (length(t.route) < minimums.get(t.connection_name!)! - 1e-7 ||
               length(t.route) > maximums.get(t.connection_name!)! + 1e-7)),
@@ -117,9 +126,7 @@ export function* matchNativeCarrierSignals(
     const complete = [...paired, ...traces]
     if (
       complete.length !== original.connections.length ||
-      !complete.every((trace) =>
-        joinedSignalGeometryIsValid({ input: original, trace }),
-      )
+      !complete.every(geometryValid)
     )
       return false
     if (
@@ -312,7 +319,7 @@ export function* matchNativeCarrierSignals(
               old &&
               minimums.has(c.name) &&
               length(old.route) < minimums.get(c.name)! - 1e-8 &&
-              joinedSignalGeometryIsValid({ input: original, trace: old })
+              geometryValid(old)
             )
               candidate = tuneNativeCarrierSignal(
                 local,
@@ -385,7 +392,7 @@ export function* matchNativeCarrierSignals(
       // Without feedback the shortest-path search repeats that same invalid
       // geometry forever, even though it is correctly marked unfinished.
       for (const trace of all) {
-        if (joinedSignalGeometryIsValid({ input: original, trace })) continue
+        if (geometryValid(trace)) continue
         for (const wire of physical(trace)) {
           const plane = wire.layer === input.allowedLayers![0] ? 1 : 0
           if (wire.layer !== "top" && plane !== 1) continue

@@ -84,16 +84,12 @@ function defaultCenterlines(
     Number((Math.round(n / step) * step).toFixed(8))
   const out = Number(
     (
-      Math.floor(
-        (Math.max(...projection(source.copper, forward)) - 1e-8) / step,
-      ) * step
+      Math.floor(Math.max(...projection(source.copper, forward)) / step) * step
     ).toFixed(8),
   )
   const incoming = Number(
     (
-      Math.ceil(
-        (Math.min(...projection(target.copper, forward)) + 1e-8) / step,
-      ) * step
+      Math.ceil(Math.min(...projection(target.copper, forward)) / step) * step
     ).toFixed(8),
   )
   const sourceCenter = a.x * normal.x + a.y * normal.y,
@@ -334,31 +330,25 @@ export function* planNativePairedCarriers(
       Math.hypot(p.x - point.x, p.y - point.y) +
       Math.hypot(p.x - c.pointsToConnect[1].x, p.y - c.pointsToConnect[1].y)
     for (
-      let x = Math.ceil(
-        (box.minX - (options.routingBounds ?? native.bounds).minX) / step,
-      );
-      x <=
-      Math.floor(
-        (box.maxX - (options.routingBounds ?? native.bounds).minX) / step,
-      );
+      let x = Math.ceil((box.minX - (options.routingBounds?.minX ?? 0)) / step);
+      x <= Math.floor((box.maxX - (options.routingBounds?.minX ?? 0)) / step);
       x++
     )
       for (
         let y = Math.ceil(
-          (box.minY + 0.01 - (options.routingBounds ?? native.bounds).minY) /
-            step,
+          (box.minY + 0.01 - (options.routingBounds?.minY ?? 0)) / step,
         );
         y <=
         Math.floor(
           (Math.min(box.maxY, point.y + 0.2) -
-            (options.routingBounds ?? native.bounds).minY) /
+            (options.routingBounds?.minY ?? 0)) /
             step,
         );
         y++
       ) {
         const p = {
-            x: (options.routingBounds ?? native.bounds).minX + x * step,
-            y: (options.routingBounds ?? native.bounds).minY + y * step,
+            x: (options.routingBounds?.minX ?? 0) + x * step,
+            y: (options.routingBounds?.minY ?? 0) + y * step,
           },
           lower = estimate(p)
         if (lower <= desired + 0.3 && lower >= desired - 0.7) candidates.push(p)
