@@ -12,11 +12,16 @@ import { busLengthReports, pairLengthReports } from "./route-lengths"
 import { pairCouplingReports } from "./pair-coupling"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { sharedPairSpacingReports } from "./shared-pair-spacing"
+import { nativeSignalGeometryIsValid } from "./native-signal-geometry"
 import { joinedSignalGeometryIsValid } from "./joined-signal-geometry"
 import { fixedCopper, VectorScene } from "./vector-scene"
 import type { Connection, SimpleRouteJson, Trace } from "./types"
 
 export interface NativeCarrierMatchingOptions {
+  /** New pinned cohorts use self-clearance history and retain existing tuning
+   * banks during repair. Existing strategies preserve their search ordering;
+   * final acceptance always checks joined geometry in both modes. */
+  adaptiveRepair?: boolean
   /** Genuine native owners of immutable copper, excluded from routing requests. */
   fixedConnections?: Connection[]
   /** Initial timing targets for buses without a differential length anchor. */
@@ -116,7 +121,9 @@ export function* matchNativeCarrierSignals(
     traces
       .filter(
         (t) =>
-          !geometryValid(t) ||
+          !(options.adaptiveRepair
+            ? geometryValid(t)
+            : nativeSignalGeometryIsValid(t)) ||
           (minimums.has(t.connection_name!) &&
             (length(t.route) < minimums.get(t.connection_name!)! - 1e-7 ||
               length(t.route) > maximums.get(t.connection_name!)! + 1e-7)),
@@ -315,6 +322,7 @@ export function* matchNativeCarrierSignals(
                 )
               : cleanNativeCarrierSignal(local, c, raw.trace, others, true)
             if (
+              options.adaptiveRepair &&
               !candidate &&
               old &&
               minimums.has(c.name) &&
@@ -385,13 +393,15 @@ export function* matchNativeCarrierSignals(
             10,
           )
       }
-      const missing = unfinished([...frozen, ...all])
+      const missing = unfinished(
+        options.adaptiveRepair ? [...frozen, ...all] : all,
+      )
       for (const name of missing)
         trouble.set(name, (trouble.get(name) ?? 0) + 1)
       // An isolated returning arm has no different-net conflict to charge.
       // Without feedback the shortest-path search repeats that same invalid
       // geometry forever, even though it is correctly marked unfinished.
-      for (const trace of all) {
+      for (const trace of options.adaptiveRepair ? all : []) {
         if (geometryValid(trace)) continue
         for (const wire of physical(trace)) {
           const plane = wire.layer === input.allowedLayers![0] ? 1 : 0

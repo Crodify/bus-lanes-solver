@@ -346,6 +346,7 @@ export function* routePinnedNativeBuses(
       paired,
       {
         ...config,
+        adaptiveRepair: true,
         busTargetLengths,
         deferSearchLengthBound:
           options.deferSearchLengthBound ?? !!unanchored.length,
