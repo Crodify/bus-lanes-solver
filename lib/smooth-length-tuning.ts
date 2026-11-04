@@ -31,6 +31,7 @@ export function tuneSmoothLengths(
     maxCandidates?: number
     packMeanders?: boolean
     packageOnlyPairTuning?: boolean
+    protectPairedTerminalVias?: boolean
     /** Rank hard-clear banks during negotiated routing. Soft conflicts must
      * still be resolved before accepting the complete circuit. */
     candidateScore?: (trace: Trace) => number
@@ -50,9 +51,12 @@ export function tuneSmoothLengths(
     )!
     // Keep the existing coupled-pair correction path unchanged. Independent
     // lane tuning must not spend additional copper length in its via land.
-    const terminalViaCopperIsClear = t.coupledSection
-      ? (_path: Point[]) => true
-      : createTerminalViaClearanceChecker(input, t)
+    const terminalViaCopperIsClear =
+      t.coupledSection && !options.protectPairedTerminalVias
+        ? (_path: Point[]) => true
+        : createTerminalViaClearanceChecker(input, t, {
+            preserveExistingApproach: !options.protectPairedTerminalVias,
+          })
     const width = (t.route[0] as Wire).width
     const fixedLength = fixedRouteLength(input, connection.name)
     const currentLength = length(t.route) + fixedLength

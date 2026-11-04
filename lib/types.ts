@@ -94,6 +94,8 @@ export interface SimpleRouteJson {
   }>
 }
 export interface SolverOptions {
+  /** Reject paired tuning that folds back into a generated terminal via land. */
+  protectPairedTerminalVias?: boolean
   /** Candidate budget for tuning the original paired corridor. */
   originalCorridorTuningCandidates?: number
   smoothTuning?: boolean

@@ -7,6 +7,7 @@ import { joinSignalEscapes } from "./join-signal-escapes"
 import { NativeCarrierRouter } from "./native-carrier-router"
 import { packageApproachRegions, pointInBox } from "./package-approach-regions"
 import { chamferOrdinaryCorners } from "./chamfer-ordinary-corners"
+import { generatedTraceTerminalViasAreClear } from "./terminal-via-clearance"
 import { fixedCopper, VectorScene } from "./vector-scene"
 import type { Connection, Point, SimpleRouteJson, Trace } from "./types"
 
@@ -19,6 +20,7 @@ export interface NativePairedCarrierOptions {
   balanceApproaches?: boolean
   /** Round new pinned-cohort handoffs inward at exact package boundaries. */
   insetHandoffs?: boolean
+  protectPairedTerminalVias?: boolean
   busTargetLength?: number
   routingBounds?: SimpleRouteJson["bounds"]
   gridStep?: number
@@ -475,6 +477,7 @@ export function* planNativePairedCarriers(
     0.125,
   )
   const solver = BusLanesSolver.forRefinement(pairedInput, clean, {
+    protectPairedTerminalVias: options.protectPairedTerminalVias,
     smoothTuning: true,
     denseSearch: true,
     originalCorridorTuningCandidates: 65536,
@@ -524,6 +527,7 @@ export function* planNativePairedCarriers(
   )
   const bankInput = { ...pairedInput, buses: targets }
   const matcher = BusLanesSolver.forRefinement(bankInput, solver.traces, {
+    protectPairedTerminalVias: options.protectPairedTerminalVias,
     smoothTuning: true,
     denseSearch: true,
     originalCorridorTuningCandidates: 65536,
@@ -537,10 +541,16 @@ export function* planNativePairedCarriers(
     if (!matcher.solved && !matcher.failed) matcher.tryFinalAcceptance()
   }
   if (!matcher.solved) return null
-  return matcher.traces.map((t) =>
+  const joined = matcher.traces.map((t) =>
     joinSignalEscapes(
       t,
       escapes.filter((e) => e.connection_name === t.connection_name),
     ),
   )
+  if (
+    options.protectPairedTerminalVias &&
+    joined.some((t) => !generatedTraceTerminalViasAreClear(native, t))
+  )
+    return null
+  return joined
 }

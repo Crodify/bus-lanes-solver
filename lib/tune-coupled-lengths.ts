@@ -54,6 +54,7 @@ export function tuneCoupledLengths(
     maxCandidates?: number
     packMeanders?: boolean
     packageOnlyPairTuning?: boolean
+    protectPairedTerminalVias?: boolean
     priorityConnectionNames?: string[]
   } = {},
 ): Trace[] {

@@ -10,6 +10,7 @@ import { isUnroutedComponentPad } from "./is-unrouted-component-pad"
 import { busLengthReports, pairLengthReports } from "./route-lengths"
 import { exteriorPairSpacingReports } from "./exterior-pair-spacing"
 import { joinedSignalGeometryIsValid } from "./joined-signal-geometry"
+import { generatedTraceTerminalViasAreClear } from "./terminal-via-clearance"
 import { effectiveCarrierLayers } from "./effective-carrier-layers"
 import { routeAlternateSignalDogbones } from "./alternate-signal-dogbones"
 import { planNativePairedCarriers } from "./plan-native-paired-carriers"
@@ -188,6 +189,7 @@ export function* routePinnedNativeBuses(
       fixedConnections: input.connections,
       balanceApproaches: options.balanceApproaches ?? false,
       insetHandoffs: true,
+      protectPairedTerminalVias: true,
       packageRegions,
       maxExpansionsPerRoute: options.maxExpansionsPerRoute ?? 300000,
       maxApproachPasses: options.maxApproachPasses ?? 50,
@@ -417,8 +419,10 @@ export function* routePinnedNativeBuses(
     input.connections.some(
       (c) => completed.filter((t) => t.connection_name === c.name).length !== 1,
     ) ||
-    !completed.every((trace) =>
-      joinedSignalGeometryIsValid({ input, trace }),
+    !completed.every(
+      (trace) =>
+        joinedSignalGeometryIsValid({ input, trace }) &&
+        generatedTraceTerminalViasAreClear(input, trace),
     ) ||
     busLengthReports(input, completed).some(
       (b) =>
