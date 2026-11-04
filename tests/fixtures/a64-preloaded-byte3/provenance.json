@@ -1,0 +1,134 @@
+{
+  "source": {
+    "id": "a64",
+    "name": "OLIMEX A64-OLinuXino rev H",
+    "repo": "OLIMEX/OLINUXINO",
+    "commit": "85eee9c17ee13af65617d73bdd94de7ec49cfb42",
+    "path": "HARDWARE/A64-OLinuXino/1. Latest hardware revision/A64-OLinuXino hardware revision H/A64-OlinuXino_Rev_H.kicad_pcb",
+    "sourceSha256": "3acf7af7d39d54ba87343845d78851b0245a6290841cb463c42c7e41696404f4",
+    "components": [
+      {
+        "ref": "U2",
+        "value": "K4B4G1646Q-HYK0(FBGA-96_256Mx16_DDR3-1600_11-11-11)",
+        "footprint": "OLIMEX_IC-FP:FBGA96(HYNIX_SAMSUNG_512MX16_DDR3)",
+        "pads": 196,
+        "at": [
+          "129",
+          "87",
+          "180"
+        ]
+      },
+      {
+        "ref": "U3",
+        "value": "K4B4G1646Q-HYK0(FBGA-96_256Mx16_DDR3-1600_11-11-11)",
+        "footprint": "OLIMEX_IC-FP:FBGA96(HYNIX_SAMSUNG_512MX16_DDR3)",
+        "pads": 196,
+        "at": [
+          "127",
+          "73",
+          "180"
+        ]
+      },
+      {
+        "ref": "U1",
+        "value": "AllWinner-A64(FBGA396)",
+        "footprint": "OLIMEX_IC-FP:FBGA396",
+        "pads": 795,
+        "at": [
+          "144.95",
+          "72.15"
+        ]
+      }
+    ],
+    "nativeLayers": [
+      [
+        "0",
+        "F.Cu",
+        "mixed"
+      ],
+      [
+        "1",
+        "In1.Cu",
+        "power"
+      ],
+      [
+        "2",
+        "In2.Cu",
+        "signal"
+      ],
+      [
+        "3",
+        "In3.Cu",
+        "signal"
+      ],
+      [
+        "4",
+        "In4.Cu",
+        "power"
+      ],
+      [
+        "31",
+        "B.Cu",
+        "mixed"
+      ]
+    ],
+    "signalLayers": [
+      "top",
+      "inner2",
+      "inner3",
+      "bottom"
+    ],
+    "nets": 75,
+    "terminals": 184,
+    "pads": 2122,
+    "rules": {
+      "widths": [
+        0.127
+      ],
+      "clearances": [
+        0.10668
+      ],
+      "appliedGlobalClearance": 0.10668,
+      "viaPad": 0.327,
+      "viaDrill": 0.2
+    },
+    "rectangularPadApproximations": {
+      "oval": 13
+    },
+    "scope": "All named DDR signal nets incident to CPU or RAM, including passive endpoints. Power, VREF, ZQ and unconnected nets excluded. Existing traces, vias and zones removed. Board uses edge bounding box. No timing or impedance constraints invented.",
+    "sample": "sample002",
+    "sampleSha256": "9d3e7417f6b1b1711ffc642c02fda5333cb33861d08bb1cc91228846bb751848",
+    "license": "CC-BY-SA-3.0-US",
+    "sourceUrl": "https://github.com/OLIMEX/OLINUXINO/blob/85eee9c17ee13af65617d73bdd94de7ec49cfb42/HARDWARE/A64-OLinuXino/1.%20Latest%20hardware%20revision/A64-OLinuXino%20hardware%20revision%20H/A64-OlinuXino_Rev_H.kicad_pcb",
+    "extractionRevision": "preserved-ddr-assessment-2026-10-27",
+    "notes": [
+      "These are the captured routing inputs, not newly simplified two-chip layouts.",
+      "KiCad pad primitives are retained as separate obstacles; some package footprints contain multiple primitives per ball.",
+      "Bus metadata restricts source signal layers only; no timing, skew, impedance or differential-pair constraints are invented."
+    ]
+  },
+  "versions": {
+    "tscircuit": "0.0.3082",
+    "@tscircuit/core": "0.0.2268",
+    "@tscircuit/capacity-autorouter": "0.0.1038",
+    "@tscircuit/checks": "0.0.268",
+    "@tscircuit/props": "0.0.717",
+    "circuit-to-svg": "0.0.455",
+    "circuit-json": "0.0.542",
+    "circuit-json-to-connectivity-map": "0.0.33",
+    "react": "19.3.1",
+    "@tscircuit/bus-lanes-solver (core bundled pin)": "https://jscdn.tscircuit.com/@tscircuit/bus-lanes-solver/0.0.42.tgz"
+  },
+  "inputSha256": "5b0d56dd6517e37c5c8d36dae63d2348c4b16994898f7be043250c333cb18cd9",
+  "inputFile": "validated-full/a64/phase-7-input.srj.json",
+  "originalTsxSha256": "3ec91d475bc4762bd0446e950a5efa0d2f76ddfe7c8f0bc2b64bb6d7e9e73aa1",
+  "capturedPhase": "byte3",
+  "inputSource": "Original A64 TSX through published tscircuit 0.0.3082; autorouting:start phase-7-input.srj.json",
+  "requestedRoutes": 8,
+  "preloadedRoutes": 24,
+  "fixedConnectionSourcePhases": [
+    "byte0",
+    "byte1",
+    "byte2"
+  ]
+}
