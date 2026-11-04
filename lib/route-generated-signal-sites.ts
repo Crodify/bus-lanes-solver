@@ -34,8 +34,8 @@ export function* routeGeneratedSignalSites({
 function* negotiateGeneratedSignalSites(
   input: SimpleRouteJson,
 ): ReturnType<typeof negotiateSignalSites> {
-  // Keep successful local domains before broadening a blocked assignment.
-  for (const expandEmptyDomainsOnly of [true, false]) {
+  // Preserve the original search before allowing pad-edge escape sites.
+  for (const allowPadEdgeSites of [false, true]) {
     const routed = yield* negotiateSignalSites(
       { native: input, pending: input, escapes: [], retained: [], traces: [] },
       new Set(input.connections.map((connection) => connection.name)),
@@ -44,7 +44,8 @@ function* negotiateGeneratedSignalSites(
       {
         checkEscapeCompatibility: true,
         allowExpandedSites: true,
-        expandEmptyDomainsOnly,
+        expandEmptyDomainsOnly: !allowPadEdgeSites,
+        allowPadEdgeSites,
         maxCandidateSearchNodes: 12000,
       },
     )

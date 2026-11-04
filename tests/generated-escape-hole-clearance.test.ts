@@ -44,11 +44,11 @@ test("compact expanded choices keep their two generated barrels drill-clear", ()
   const input = nearbyNativePackages()
   input.minViaHoleEdgeToViaHoleEdgeClearance = 0.1
   const original = structuredClone(input)
-  const search = expandedSignalSiteChoices(
+  const search = expandedSignalSiteChoices({
     input,
-    input.connections[0],
-    "bottom",
-  )
+    connection: input.connections[0],
+    targetLayer: "bottom",
+  })
   let step = search.next(),
     steps = 0
   while (!step.done && steps++ < 100000) step = search.next()

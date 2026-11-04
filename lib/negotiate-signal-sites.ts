@@ -35,6 +35,7 @@ interface SignalSiteOptions {
   checkEscapeCompatibility?: boolean
   allowExpandedSites?: boolean
   expandEmptyDomainsOnly?: boolean
+  allowPadEdgeSites?: boolean
   maxCandidateSearchNodes?: number
   retainExistingRoutes?: boolean
   onBlockedConnection?: (name: string) => void
@@ -476,11 +477,12 @@ export function* negotiateSignalSites(
           choices.some((choice) => choice.layer === layer))
       )
         continue
-      const expanded = yield* expandedSignalSiteChoices(
-        single,
+      const expanded = yield* expandedSignalSiteChoices({
+        input: single,
         connection,
-        layer,
-      )
+        targetLayer: layer,
+        allowPadEdgeSites: options.allowPadEdgeSites,
+      })
       for (const option of expanded) {
         const maxLength = maximumCarrierLength(
           { ...native, traces: [...(native.traces ?? []), ...option.escapes] },
