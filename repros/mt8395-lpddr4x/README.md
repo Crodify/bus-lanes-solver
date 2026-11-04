@@ -1,12 +1,13 @@
 # MT8395 LPDDR4X: exact core input reproduction
 
-![Validated 11-signal MT8395 byte-zero routing](byte0.snap.svg)
+![Validated 138-signal MT8395 LPDDR4X routing](board.snap.svg)
 
 [Visual snapshot](board.snap.svg) · [full-board SRJ](../../tests/fixtures/mt8395-core/full.srj.json) · [byte-zero SRJ](../../tests/fixtures/mt8395-core/byte0.srj.json) · [DQS-pair SRJ](../../tests/fixtures/mt8395-core/pair.srj.json) · [measured baseline](baseline.json)
 
-The **byte-zero capture now routes all 11 signals**, including the coupled DQS pair, with its original timing and manufacturing constraints. [Completed byte snapshot](byte0.snap.svg), [validated copper](routed/byte0.srj.json.gz), and [solve report](routed/byte0-report.json) are retained for review. The snapshot is exported only after solver success and independent validation.
+The **full native core capture routes all 138 signals**, including all 18 buses and 12 differential pairs, with the original timing and manufacturing constraints. The [completed board snapshot](board.snap.svg), [validated copper](routed/full.srj.json.gz), and [fresh solve report](routed/full-report.json) are retained for review. Snapshot export requires solver success and independent validation of all connections, DRC, timing, coupling, and forbidden via-in-pad holes.
 
-The full 138-signal case is still under development. `board.snap.svg` remains its clearly labeled input-only diagnostic: dashed lines are unrouted requests. It is not a completed full-board result. No failed or intermediate copper is published.
+The independently captured byte-zero case also routes all 11 signals: [byte snapshot](byte0.snap.svg), [validated copper](routed/byte0.srj.json.gz), and [solve report](routed/byte0-report.json). `board.snap.svg` now contains completed copper, replacing the earlier input-only diagnostic.
+
 ## Replay the exact request
 
 From the repository root, install its dependencies with `bun install`, then:
@@ -15,7 +16,8 @@ From the repository root, install its dependencies with `bun install`, then:
 # No core installation is needed for these solver-only replays.
 bun repros/mt8395-lpddr4x/run.ts pair --timeout-ms 30000
 bun repros/mt8395-lpddr4x/run.ts byte0 --timeout-ms 60000
-bun repros/mt8395-lpddr4x/run.ts full --timeout-ms 1800000
+BUN_JSC_forceRAMSize=2147483648 BUN_JSC_miniVMHeapGrowthFactor=1.05 \
+  bun repros/mt8395-lpddr4x/run.ts full --timeout-ms 1800000
 ```
 
 Each command imports **this checkout's** `BusLanesPipelineSolver` from `lib/index.ts`, passes an immutable, hash-checked capture directly to its constructor, and performs a fresh matched solve. No top-level `allowedLayers` is added; no connections, metadata, pads, bus limits, pair constraints, or via permissions are changed. The only solver option is an elapsed-time budget. `--solver /absolute/path/to/another-checkout/lib/index.ts` and `--label before` support comparisons without changing the input.
@@ -63,7 +65,7 @@ The earlier redundant-global-layer workaround is intentionally absent here. Solv
 
 ## Routing strategy
 
-The pipeline recognizes disjoint native buses pinned to individual inner layers, including restrictions supplied only on each bus. It reserves local escapes before placing all coupled pairs, then negotiates ordinary signals together on each shared carrier. Each bus keeps its own timing window; command/address buses without a differential anchor derive starting targets from fresh native paths. Search windows are bounded around the participating packages without changing board geometry or removing obstacles.
+The pipeline recognizes disjoint native buses pinned to individual inner layers, including restrictions supplied only on each bus. It reserves local escapes before placing all coupled pairs, then negotiates ordinary signals together on each shared carrier. Carriers with unanchored command/address buses route first, before data-via placement can obstruct their matching paths. These command cohorts first establish clear topology, then retain and extend it while adding timing banks. Each bus keeps its original timing constraints; command/address buses without a differential anchor derive starting targets from fresh native paths. Search windows are bounded around the participating packages without changing board geometry or removing obstacles.
 
 The final acceptance gate checks the original full-board input, including whole-signal lengths, differential coupling, self-clearance, through-via clearance, and endpoint connectivity. Existing supplied-fanout and native strategies retain their dispatch precedence.
 
@@ -74,11 +76,12 @@ At solver commit `005bee4ae0af17cea30108e4f57d58cd4b2dc430`, the exact two-signa
 The prior connectivity-only experiment is **not** replayed here because it changes the solver goal and adds a global layer. It also emitted same-net via holes inside SMT pads despite via-in-pad being forbidden. `validate.ts` includes an ownership-independent hole-to-pad check so a future fix cannot publish that invalid geometry merely because its electrical connectivity or different-net clearance checks pass.
 
 ```sh
-bun test tests/mt8395-core-input.test.ts
-bun repros/mt8395-lpddr4x/snapshot.ts repros/mt8395-lpddr4x/results/byte0 byte0
+bun test tests/mt8395-core-input.test.ts tests/mt8395-routed-snapshot.test.ts
+bun test tests/repros/mt8395-core-full-routing.test.ts
+bun repros/mt8395-lpddr4x/snapshot.ts repros/mt8395-lpddr4x/results/full full
 ```
 
-The tests verify input ownership and constraints, fresh pair/byte solves, deterministic accepted-copper rendering, and rejection of missing routes and same-net via-in-pad output. Changing the solver requires fresh replays; revalidating retained output is not a solve.
+The tests verify input ownership and constraints, fresh pair/byte/full solves, deterministic accepted-copper rendering, and rejection of missing routes and same-net via-in-pad output. Changing the solver requires fresh replays; revalidating retained output is not a solve.
 
 ## Hardware scope and provenance
 
