@@ -17,6 +17,8 @@ export interface NativePairedCarrierOptions {
   packageRegions?: ReturnType<typeof packageApproachRegions>
   /** Retry original approaches when moving a via closes a tuning pocket. */
   balanceApproaches?: boolean
+  /** Round new pinned-cohort handoffs inward at exact package boundaries. */
+  insetHandoffs?: boolean
   busTargetLength?: number
   routingBounds?: SimpleRouteJson["bounds"]
   gridStep?: number
@@ -49,6 +51,7 @@ function defaultCenterlines(
   native: SimpleRouteJson,
   step: number,
   packageRegions?: ReturnType<typeof packageApproachRegions>,
+  inset = 0,
 ): Point[][] {
   const pairs = native.differentialPairs!,
     regions =
@@ -84,12 +87,16 @@ function defaultCenterlines(
     Number((Math.round(n / step) * step).toFixed(8))
   const out = Number(
     (
-      Math.floor(Math.max(...projection(source.copper, forward)) / step) * step
+      Math.floor(
+        (Math.max(...projection(source.copper, forward)) - inset) / step,
+      ) * step
     ).toFixed(8),
   )
   const incoming = Number(
     (
-      Math.ceil(Math.min(...projection(target.copper, forward)) / step) * step
+      Math.ceil(
+        (Math.min(...projection(target.copper, forward)) + inset) / step,
+      ) * step
     ).toFixed(8),
   )
   const sourceCenter = a.x * normal.x + a.y * normal.y,
@@ -156,7 +163,12 @@ export function* planNativePairedCarriers(
   if (!pairs.length) return []
   const centers =
     options.centerlines ??
-    defaultCenterlines(native, step, options.packageRegions)
+    defaultCenterlines(
+      native,
+      step,
+      options.packageRegions,
+      options.insetHandoffs ? 1e-8 : 0,
+    )
   if (centers.length !== pairs.length)
     throw Error("Supply exactly one backbone for each differential pair")
   const regions =

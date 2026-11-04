@@ -2,6 +2,7 @@ import { expect, test } from "bun:test"
 import { validateRoutedCopperDrc } from "@tscircuit/fanout-solver"
 import { NativeCarrierRouter } from "../lib/native-carrier-router"
 import { tuneNativeCarrierSignal } from "../lib/native-carrier-tuning"
+import { matchNativeCarrierSignals } from "../lib/match-native-carrier-signals"
 import { joinedSignalGeometryIsValid } from "../lib/joined-signal-geometry"
 import { length } from "../lib/geometry"
 import type { SimpleRouteJson } from "../lib/types"
@@ -55,17 +56,26 @@ test("a native lane can extend its timing window without discarding an existing 
   expect(first).not.toBeNull()
   expect(first.curvedSegments!.length).toBeGreaterThan(0)
   const firstCopy = structuredClone(first)
-  const extended = tuneNativeCarrierSignal(
-    input,
-    input.connections[0],
-    first,
-    16,
-    16.1,
+  const matching = matchNativeCarrierSignals(
+    {
+      ...input,
+      buses: [
+        { busId: "command", connectionNames: ["signal"], maxLengthSkew: 0.1 },
+      ],
+    },
     [],
+    {
+      preserveExistingRoutes: true,
+      busTargetLengths: { command: 16.1 },
+      maxTuningCandidates: 8192,
+    },
     undefined,
-    8192,
-    true,
-  )!
+    [first],
+  )
+  let matched = matching.next()
+  while (!matched.done) matched = matching.next()
+  expect(matched.value).not.toBeNull()
+  const extended = matched.value![0]
   expect(extended).not.toBeNull()
   expect(length(extended.route)).toBeCloseTo(16, 6)
   expect(joinedSignalGeometryIsValid({ input, trace: extended })).toBe(true)

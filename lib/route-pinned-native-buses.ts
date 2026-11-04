@@ -187,6 +187,7 @@ export function* routePinnedNativeBuses(
       gridStep: options.gridStep ?? input.minTraceWidth / 2,
       fixedConnections: input.connections,
       balanceApproaches: options.balanceApproaches ?? false,
+      insetHandoffs: true,
       packageRegions,
       maxExpansionsPerRoute: options.maxExpansionsPerRoute ?? 300000,
       maxApproachPasses: options.maxApproachPasses ?? 50,
@@ -251,7 +252,21 @@ export function* routePinnedNativeBuses(
   }
   // Negotiate every ordinary lane sharing a carrier together. Freezing one
   // byte's timing bank before its neighbors can trap a later data/command bus.
-  for (const carrier of [...new Set(targets.values())]) {
+  // Negotiate unanchored command cohorts before data escapes become fixed.
+  const carriers = [...new Set(targets.values())].sort(
+    (a, b) =>
+      Number(
+        groups.some(
+          (g) => targets.get(g.connections[0].name) === b && !g.pairs.length,
+        ),
+      ) -
+      Number(
+        groups.some(
+          (g) => targets.get(g.connections[0].name) === a && !g.pairs.length,
+        ),
+      ),
+  )
+  for (const carrier of carriers) {
     const cohort = groups.filter(
       (g) => targets.get(g.connections[0].name) === carrier,
     )
@@ -289,14 +304,61 @@ export function* routePinnedNativeBuses(
     }
     const config = {
       ...cohort[0].config,
+      adaptiveRepair: true,
       gridStep: step,
       fineGridStep: options.fineGridStep ?? input.minTraceWidth / 3,
       routingBounds: bounds,
-      maxExpansionsPerRoute: options.maxExpansionsPerRoute ?? 500000,
+      maxExpansionsPerRoute:
+        options.maxExpansionsPerRoute ?? (unanchored.length ? 1500000 : 500000),
     }
+    const report = (state: NativeCarrierProgress) =>
+      progress?.({
+        ...state,
+        groupName: carrier,
+        completedConnections: completed.length,
+        traces: [
+          ...fixed.filter((t) => completed.includes(t)),
+          ...state.traces,
+        ],
+      })
     const seed: Trace[] = []
     const busTargetLengths: Record<string, number> = {}
-    if (unanchored.length) {
+    const clearTopologyFirst =
+      unanchored.length > 0 &&
+      cohort.every(
+        (group) => !group.pairs.length || group.connections.length === 2,
+      )
+    if (clearTopologyFirst) {
+      // Command buses have no strobe length anchor. Establish a physically
+      // clear topology before choosing their timing targets; independently
+      // tuned shortest paths otherwise fill each other's only package exits.
+      // These provisional paths remain internal. Original timing constraints
+      // are restored for matching and checked again at full-board acceptance.
+      const clear = yield* matchNativeCarrierSignals(
+        { ...local, buses: [], differentialPairs: [] },
+        paired,
+        config,
+        (state) => report({ ...state, stage: `pinned_clear_${state.stage}` }),
+      )
+      if (!clear) return null
+      const pairedNames = new Set(paired.map((trace) => trace.connection_name))
+      seed.push(
+        ...clear.filter((trace) => !pairedNames.has(trace.connection_name)),
+      )
+      for (const group of unanchored)
+        busTargetLengths[group.bus.busId] = Math.max(
+          group.bus.minLength ?? 0,
+          Math.ceil(
+            Math.max(
+              ...seed
+                .filter((trace) =>
+                  group.bus.connectionNames.includes(trace.connection_name!),
+                )
+                .map((trace) => length(trace.route)),
+            ),
+          ),
+        )
+    } else if (unanchored.length) {
       const cells =
         (Math.ceil((bounds.maxX - bounds.minX) / step) + 1) *
         (Math.ceil((bounds.maxY - bounds.minY) / step) + 1)
@@ -331,22 +393,13 @@ export function* routePinnedNativeBuses(
         )
       }
     }
-    const report = (state: NativeCarrierProgress) =>
-      progress?.({
-        ...state,
-        groupName: carrier,
-        completedConnections: completed.length,
-        traces: [
-          ...fixed.filter((t) => completed.includes(t)),
-          ...state.traces,
-        ],
-      })
     const result = yield* matchNativeCarrierSignals(
       local,
       paired,
       {
         ...config,
-        adaptiveRepair: true,
+        preserveExistingRoutes:
+          options.preserveExistingRoutes ?? clearTopologyFirst,
         busTargetLengths,
         deferSearchLengthBound:
           options.deferSearchLengthBound ?? !!unanchored.length,
