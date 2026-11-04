@@ -28,3 +28,5 @@ The original full-board TSX and native placements are in `circuits/`. To recaptu
 Source PCB links, commits, original hashes and published package versions are retained in `tests/fixtures/{h3,a64}-preloaded-byte/provenance.json`. H3 is from `hvwyl/allwinner-h3-ddr3-16x1-kicad`; A64 is from OLIMEX A64-OLinuXino revision H.
 
 The repro changes no production solver or AM3352 benchmark behavior. It does not claim completion of the full 53/75-connection DDR sections or DDR timing closure.
+
+The [fresh eleven-case AM3352 control gallery](am3352-controls/README.md) reports the paired benchmark and includes only successfully completed, validated routes. All eleven complete outputs are identical on base and fix.
