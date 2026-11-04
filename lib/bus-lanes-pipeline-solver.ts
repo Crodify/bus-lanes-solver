@@ -11,6 +11,7 @@ import {
 import { withInferredSurfaceLayers } from "./effective-carrier-layers"
 import { withSkewRoundoffReserve } from "./skew-roundoff-reserve"
 import { initialSignalDogbones } from "./initial-signal-dogbones"
+import { routeGeneratedSignalSites } from "./route-generated-signal-sites"
 import { independentBusGroups } from "./route-independent-buses"
 import { routeFreshIndependentBuses } from "./route-fresh-independent-buses"
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
@@ -923,6 +924,30 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.routingInput.connections.find((c) => c.name === t.connection_name)
           ?.source_trace_id ?? t.connection_name,
     })) as Trace[]
+    const usedNativeFallback = result.connections.some((connection) =>
+      connection.pointsToConnect.some(
+        (point) =>
+          "layer" in point && point.layer !== targets.get(connection.name),
+      ),
+    )
+    if (
+      usedNativeFallback &&
+      this.options.denseSearch &&
+      this.options.smoothTuning &&
+      !this.routingInput.differentialPairs?.length &&
+      this.routingInput.connections.every((connection) =>
+        connection.pointsToConnect.every((point) =>
+          isUnroutedComponentPad(this.routingInput, connection, point),
+        ),
+      )
+    ) {
+      this.surfaceFinishing = routeGeneratedSignalSites({
+        input: this.routingInput,
+        options: this.childOptions(),
+        maxSteps: Math.max(1, this.MAX_ITERATIONS - this.iterations),
+      })
+      return
+    }
     // Only newly created, two-ended dogbones may change signal layers during
     // congestion negotiation. Existing handoffs always keep their fixed layer.
     const terminalLayers = new Map<string, string[]>()
@@ -1299,8 +1324,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.siteRematch = undefined
         return
       }
-      if (!this.child && !this.backwardPackages && !this.sharedPackages)
+      if (!this.child && !this.backwardPackages && !this.sharedPackages) {
         this.prepare()
+        if (this.surfaceFinishing) return
+      }
       if (this.sharedPackages) {
         this.phase = "route_shared_layers"
         const state = this.sharedPackages.next()
