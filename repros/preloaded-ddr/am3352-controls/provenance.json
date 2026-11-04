@@ -1,0 +1,279 @@
+{
+  "baseProductionCommit": "afe52fdccd276c39387ad022addf26f7ad21926d",
+  "headProductionCommit": "e151a5d673bb2e575d549a0f98f4ee67885150db",
+  "baseSourceTree": "bdf7d670bb2f43ba2ec49e66d4246ff047610263",
+  "headSourceTree": "e582c7421878ea63ca5abc4f6d677e7a75335ec7",
+  "runtime": "Bun 1.4.3",
+  "environment": "Shared Linux x64 runner, four CPU quota cores, 16 GiB memory; one serial worker per revision, two concurrent workers total",
+  "timeoutSecondsPerSolve": 3600,
+  "commands": [
+    "./benchmark.sh --solver /workspace/bus-ddr-preload-repro/lib/index.ts --timeout-seconds 3600 --routes-directory /workspace/ddr-preload-investigation/am3352-base-routes --output /workspace/ddr-preload-investigation/am3352-base.json",
+    "./benchmark.sh --solver /workspace/bus-ddr-preload-fix/lib/index.ts --timeout-seconds 3600 --routes-directory /workspace/ddr-preload-investigation/am3352-head-routes --output /workspace/ddr-preload-investigation/am3352-head.json"
+  ],
+  "blacksmithComparison": "https://github.com/tscircuit/bus-lanes-solver/actions/runs/41844093287",
+  "blacksmithRuntime": "Bun 1.4.0; one four-vCPU runner per placement; alternating sequential base/head order; 3600 seconds per solve",
+  "allOutputsByteEquivalent": true,
+  "samples": [
+    {
+      "name": "control",
+      "inputSha256": "b7a4e9d09a22fe0ed131a544548b14eef20fbf4e88b6dc6ffaa11ca44e6bfe59",
+      "baseAndHeadOutputSha256": "7efaaaa324bf95cb47b295f4ed70e42a2bda83f1791cf5908c1b9c38d6641c2a",
+      "image": "control-solved.png",
+      "imageSha256": "811ee038058ce10218683cf4f714e6857b2923f186222ab5263266e59e614014",
+      "baseSolveSeconds": 24.759986777,
+      "headSolveSeconds": 24.616227666,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6350000000675919,
+        "DDR_BYTE1": 0.6350000100064577
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.0778683245814733,
+        "pair_1": 0.12688373178988854,
+        "pair_2": 0.07282965286481868
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "control-inner1",
+      "inputSha256": "14b5b318540ce7bac367cf22338abd7f9fffd2f7ce6c2a12f903116f50ca9bde",
+      "baseAndHeadOutputSha256": "3bb38e8382cd013880c9859bc245ac065a47b7dc93c0a8c269302a401ed6f1cb",
+      "image": "control-inner1-solved.png",
+      "imageSha256": "4f71f56ef7a05a6f3cc8ab14e7d75f43352a83c01e58a9a8e18e66d583bf87bc",
+      "baseSolveSeconds": 616.191794493,
+      "headSolveSeconds": 610.685813142,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6350000000017673,
+        "DDR_BYTE1": 0.6349999999999554
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.04889964467002983,
+        "pair_1": 0.004719837709238561,
+        "pair_2": 0.03021530790510596
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "right",
+      "inputSha256": "78c22c8d818ee2c2abe2eec9c6b6e408161a9d0eaf09afbafc3242e71e8f5778",
+      "baseAndHeadOutputSha256": "ca7a47dadf36b56aed0edc2464fc6eb4b15f731656f403bddc6c42f0e9b84ac0",
+      "image": "right-solved.png",
+      "imageSha256": "f3722abc3b2f9f1b68650d5185f938436147ab304656a932156579afdef658a2",
+      "baseSolveSeconds": 19.941216035,
+      "headSolveSeconds": 20.319475003,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.635000000000467,
+        "DDR_BYTE1": 0.6349999999999696
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.09604665360949838,
+        "pair_1": 0.12180230740349174,
+        "pair_2": 0.10264381675825973
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "left",
+      "inputSha256": "6042ca0f0889a983a6ccf8f929a6a46b18cc57134e1b9f3b49c19063b936caa5",
+      "baseAndHeadOutputSha256": "0c81f73c47c1d57f3a4c5181522a70c5b4c05bc58b853b96e4ae6172842b5a02",
+      "image": "left-solved.png",
+      "imageSha256": "42cebd55f4a15fb4db1c5b3c0e95b803a728fe7b39b89751e9f9c570e3c21777",
+      "baseSolveSeconds": 25.548622259,
+      "headSolveSeconds": 25.234999621,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.635000009997654,
+        "DDR_BYTE1": 0.5111468252001927
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.010514368851048062,
+        "pair_1": 0.12699999999991718,
+        "pair_2": 0.10542851386562901
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "above",
+      "inputSha256": "20fc884f08accd368e4ce049ab3fc180a1926f425787a504dbc4040f651bfa69",
+      "baseAndHeadOutputSha256": "ce683a3915115cf26d1d8fb152d137a47f9d804b7b9cbd8c930f75876464d44f",
+      "image": "above-solved.png",
+      "imageSha256": "b5f785f1b1ecb3115dc6cac59c94f1cc55c8aa60a6a62dd463c49097b1e712c5",
+      "baseSolveSeconds": 28.89692063,
+      "headSolveSeconds": 28.642348568000003,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6350000000108622,
+        "DDR_BYTE1": 0.635000000003032
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.12700000000003797,
+        "pair_1": 0.1269999999999456,
+        "pair_2": 0.12699999999998823
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "inner-layers",
+      "inputSha256": "1b91e6c5207e4b7e132aa5ac246e94777f926c7beab8675adf0356634b8280ad",
+      "baseAndHeadOutputSha256": "b2ed408eca9e4aad31289a9535301b1bd9783c6ba1ef8f7563fe85db05e6fbb0",
+      "image": "inner-layers-solved.png",
+      "imageSha256": "69377065f2c849a08976dad9588dd6ed682b6af65eba4ec3505f5d367d2437a3",
+      "baseSolveSeconds": 36.1063729,
+      "headSolveSeconds": 35.836894667,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6349999999628082,
+        "DDR_BYTE1": 0.6350000109864098
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.0778683245814733,
+        "pair_1": 0.12688373178988854,
+        "pair_2": 0.12699999999976797
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "inner-layers-right",
+      "inputSha256": "2eaf3dedcd84fbfed10262f4d4c99370a0ca00a7a060f87b7a1cdcba9de37a8e",
+      "baseAndHeadOutputSha256": "6c120b4afe7b79b46daf666b0dcc2920178513cf4d4462411b0112f5f5c04234",
+      "image": "inner-layers-right-solved.png",
+      "imageSha256": "9f14118c44621cded9aa6bb8730d33fe918be854eadb7c4c8662f0a46aeefdda",
+      "baseSolveSeconds": 51.748912774999994,
+      "headSolveSeconds": 51.882878683,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6350000110508631,
+        "DDR_BYTE1": 0.6349999999999696
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.12700001096276736,
+        "pair_1": 0.12699999999998113,
+        "pair_2": 0.1270000000000593
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "inner-layers-left",
+      "inputSha256": "1c3db8ee018bc90df7fbbb0c198c42efcc0ca948a6a213338650cf81a51f7ab2",
+      "baseAndHeadOutputSha256": "f094a77028f2b7dd70fae4b1138b831fc5a09ee29318207fe9b147b7ece8cf08",
+      "image": "inner-layers-left-solved.png",
+      "imageSha256": "d004f64b7620372b8881eb69480b0240df43f8cd95d4c3a83d06d32a43bc5319",
+      "baseSolveSeconds": 123.488058324,
+      "headSolveSeconds": 123.919131301,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.634990371865257,
+        "DDR_BYTE1": 0.6349920303628309
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.12699000000001348,
+        "pair_1": 5.274709806712963e-7,
+        "pair_2": 0.10542851386563257
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "inner-layers-above",
+      "inputSha256": "68a86ef74f8ec9628954e909464c009d98fb2c902a6376e20b3a32d4b5cff555",
+      "baseAndHeadOutputSha256": "71fe85fff33314b1f394ed8f78f86492a5be6c06dee19639a27fef5a221e0aa7",
+      "image": "inner-layers-above-solved.png",
+      "imageSha256": "dbdab10b144c64bc60be42584d232db7e23c7306d62d92402960c57e41ffed8a",
+      "baseSolveSeconds": 145.94574509400002,
+      "headSolveSeconds": 157.171344048,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6349909297154568,
+        "DDR_BYTE1": 0.6349927153210047
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.12691534384281056,
+        "pair_1": 0.12698980000070037,
+        "pair_2": 6.186337131453001e-7
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "inner-layers-complete-ca",
+      "inputSha256": "a6def279fa2d3356a66ee94b1760a76eebb6c6d8e605005ce5903bd2fbca8776",
+      "baseAndHeadOutputSha256": "30a9b1d69d32ab8933af9aa5343ff4567b05041a40e07a2f6e15b093ec6f792e",
+      "image": "inner-layers-complete-ca-solved.png",
+      "imageSha256": "8d42fb6dd4142834d1971ff1b756f88e91288fc428783599647ad808a3640185",
+      "baseSolveSeconds": 178.59014581800002,
+      "headSolveSeconds": 176.83031043000003,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6349902427763041,
+        "DDR_BYTE1": 0.6349916843630794,
+        "DDR_ADDR_CTRL_CK": 0.6349944579905653
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.07535887199949798,
+        "pair_1": 8.526512829121202e-14,
+        "pair_2": 0.06638387191047457
+      },
+      "pairCouplingPassed": true
+    },
+    {
+      "name": "outer-layers",
+      "inputSha256": "de3fd915f3c7d8c9bf4fd3c9b197596ba5e08c1be328f9c5223d7ab78736588f",
+      "baseAndHeadOutputSha256": "eb362db30d65cbcfd79caddc4a016ecf6f22e57f44f52cc58d871b501c9e6136",
+      "image": "outer-layers-solved.png",
+      "imageSha256": "716ab2b56349756cbe6b1d49bcc53cdbc762d3044bb7a412cd87214d208f7722",
+      "baseSolveSeconds": 627.088241176,
+      "headSolveSeconds": 634.449213023,
+      "signals": 47,
+      "combinedDrcFindings": 0,
+      "fixedPowerDogbonesPreserved": 161,
+      "busSkewsMm": {
+        "DDR_BYTE0": 0.6350000110165794,
+        "DDR_BYTE1": 0.6349999999999838
+      },
+      "pairSkewsMm": {
+        "pair_0": 0.019219371674388697,
+        "pair_1": 0.12700000000001666,
+        "pair_2": 0.12699999999989586
+      },
+      "pairCouplingPassed": true
+    }
+  ],
+  "visualInspection": {
+    "date": "2026-11-04",
+    "allElevenImagesViewed": true,
+    "allPhysicalLayerPanelsVisible": true,
+    "samples": [
+      "control",
+      "control-inner1",
+      "right",
+      "left",
+      "above",
+      "inner-layers",
+      "inner-layers-right",
+      "inner-layers-left",
+      "inner-layers-above",
+      "inner-layers-complete-ca",
+      "outer-layers"
+    ]
+  }
+}
