@@ -18,18 +18,7 @@ export function* routeGeneratedSignalSites({
   maxSteps: number
 }): Generator<void, CompletedGeneratedSurfaceCarriers | null> {
   const routed = yield* runBoundedRouting(
-    negotiateSignalSites(
-      { native: input, pending: input, escapes: [], retained: [], traces: [] },
-      new Set(input.connections.map((connection) => connection.name)),
-      false,
-      true,
-      {
-        checkEscapeCompatibility: true,
-        allowExpandedSites: true,
-        expandEmptyDomainsOnly: true,
-        maxCandidateSearchNodes: 12000,
-      },
-    ),
+    negotiateGeneratedSignalSites(input),
     maxSteps,
   )
   if (!routed) return null
@@ -40,4 +29,27 @@ export function* routeGeneratedSignalSites({
     options,
     maxSteps,
   })
+}
+
+function* negotiateGeneratedSignalSites(
+  input: SimpleRouteJson,
+): ReturnType<typeof negotiateSignalSites> {
+  // Preserve the original search before allowing pad-edge escape sites.
+  for (const allowPadEdgeSites of [false, true]) {
+    const routed = yield* negotiateSignalSites(
+      { native: input, pending: input, escapes: [], retained: [], traces: [] },
+      new Set(input.connections.map((connection) => connection.name)),
+      false,
+      true,
+      {
+        checkEscapeCompatibility: true,
+        allowExpandedSites: true,
+        expandEmptyDomainsOnly: !allowPadEdgeSites,
+        allowPadEdgeSites,
+        maxCandidateSearchNodes: 12000,
+      },
+    )
+    if (routed) return routed
+  }
+  return null
 }

@@ -356,11 +356,11 @@ export function* findViaAwareSignalPocket(
       for (const layer of layers) {
         if (connection.pointsToConnect.every((point) => point.layer === layer))
           continue
-        const options = yield* expandedSignalSiteChoices(
-          wideInput,
+        const options = yield* expandedSignalSiteChoices({
+          input: wideInput,
           connection,
-          layer,
-        )
+          targetLayer: layer,
+        })
         let wideBest: { score: number; names: Set<string> } | undefined
         for (const option of options) {
           const candidateCopper = fixedCopper({
