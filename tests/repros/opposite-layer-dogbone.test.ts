@@ -6,20 +6,19 @@ import { expectCompletedRouting } from "../fixtures/expect-completed-routing"
 import { nativePairCircuit } from "../fixtures/native-pair-circuit"
 import { oppositeLayerDogboneControl } from "../fixtures/opposite-layer-dogbone"
 
-test("a backside pad wrongly rejects TOP dogbones and forces a completed TOP fallback", async () => {
+test("a backside pad permits TOP dogbones and a completed INNER1 route", async () => {
   const { input, circuitJson } = oppositeLayerDogboneControl()
   const before = structuredClone(input)
-  expect(() =>
-    routeLocalSignalDogbones(input, {
-      targetLayers: new Map([["signal", "inner1"]]),
-      traceWidth: 0.1,
-      viaDiameter: 0.3,
-      viaHoleDiameter: 0.15,
-      clearance: 0.1,
-      holeToHoleClearance: 0.1,
-      allowBlindAndBuriedVias: false,
-    }),
-  ).toThrow("No collision-free local dogbone assignment")
+  const dogbones = routeLocalSignalDogbones(input, {
+    targetLayers: new Map([["signal", "inner1"]]),
+    traceWidth: 0.1,
+    viaDiameter: 0.3,
+    viaHoleDiameter: 0.15,
+    clearance: 0.1,
+    holeToHoleClearance: 0.1,
+    allowBlindAndBuriedVias: false,
+  })
+  expect(dogbones.traces).toHaveLength(2)
   expect(input).toEqual(before)
 
   const solver = new BusLanesPipelineSolver(input)
@@ -29,13 +28,23 @@ test("a backside pad wrongly rejects TOP dogbones and forces a completed TOP fal
     solver.traces.flatMap((trace) =>
       trace.route.filter((point) => point.route_type === "via"),
     ),
-  ).toHaveLength(0)
+  ).toHaveLength(2)
+  expect(
+    solver.traces.some((trace) =>
+      trace.route.some(
+        (point) => point.route_type === "wire" && point.layer === "inner1",
+      ),
+    ),
+  ).toBe(true)
   const routedCopper = nativePairCircuit({
     input,
     traces: solver.traces,
   }).filter(
     (element) => element.type === "pcb_trace" || element.type === "pcb_via",
   )
+  for (const element of routedCopper)
+    if (element.type === "pcb_via")
+      expect(element.layers).toEqual(["top", "inner1", "inner2", "bottom"])
   await expect([...circuitJson, ...routedCopper]).toMatchPcbSnapshot({
     testPath: import.meta.path,
     svgOptions: {

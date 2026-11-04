@@ -106,10 +106,9 @@ export function nativePairCircuit({
               y: point.y,
               outer_diameter: point.via_diameter ?? 0.3,
               hole_diameter: point.via_hole_diameter ?? 0.15,
-              layers: [
-                circuitLayer(point.from_layer),
-                circuitLayer(point.to_layer),
-              ],
+              layers: (
+                point.layers ?? [point.from_layer, point.to_layer]
+              ).map(circuitLayer),
             },
           ]
         : [],
