@@ -406,6 +406,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private packageCoupling?: Generator<void, Trace[]>
   private terminalLayers = new Map<string, string[]>()
   private hasNativeCarrierAlternatives = false
+  private canNegotiateGeneratedSites = false
   private carrierStrategy:
     | { name: "preferred"; startedAtIteration: 0 }
     | {
@@ -930,8 +931,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
           "layer" in point && point.layer !== targets.get(connection.name),
       ),
     )
-    if (
+    this.canNegotiateGeneratedSites = !!(
       usedNativeFallback &&
+      this.routingInput.traces?.length &&
       this.options.denseSearch &&
       this.options.smoothTuning &&
       !this.routingInput.differentialPairs?.length &&
@@ -940,14 +942,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
           isUnroutedComponentPad(this.routingInput, connection, point),
         ),
       )
-    ) {
-      this.surfaceFinishing = routeGeneratedSignalSites({
-        input: this.routingInput,
-        options: this.childOptions(),
-        maxSteps: Math.max(1, this.MAX_ITERATIONS - this.iterations),
-      })
-      return
-    }
+    )
     // Only newly created, two-ended dogbones may change signal layers during
     // congestion negotiation. Existing handoffs always keep their fixed layer.
     const terminalLayers = new Map<string, string[]>()
@@ -1231,6 +1226,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.childOptions(),
         terminalLayers,
       )
+    // Preserve successful allocations, while reserving aggregate work for
+    // movable sites if these provisional fixed approaches cannot route.
+    if (this.canNegotiateGeneratedSites)
+      this.child.MAX_ITERATIONS = Math.min(this.child.MAX_ITERATIONS, 12000)
   }
   _step() {
     if (performance.now() >= this.routingDeadline) {
@@ -1324,10 +1323,8 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.siteRematch = undefined
         return
       }
-      if (!this.child && !this.backwardPackages && !this.sharedPackages) {
+      if (!this.child && !this.backwardPackages && !this.sharedPackages)
         this.prepare()
-        if (this.surfaceFinishing) return
-      }
       if (this.sharedPackages) {
         this.phase = "route_shared_layers"
         const state = this.sharedPackages.next()
@@ -1355,6 +1352,15 @@ export class BusLanesPipelineSolver extends BaseSolver {
         )
       }
       this.child!.step()
+      if (this.child!.failed && this.canNegotiateGeneratedSites) {
+        this.canNegotiateGeneratedSites = false
+        this.surfaceFinishing = routeGeneratedSignalSites({
+          input: this.routingInput,
+          options: this.childOptions(),
+          maxSteps: Math.max(1, this.MAX_ITERATIONS - this.iterations),
+        })
+        return
+      }
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
         ...this.child!.stats,
