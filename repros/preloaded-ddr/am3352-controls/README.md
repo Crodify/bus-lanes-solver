@@ -8,7 +8,7 @@ Base production source: `afe52fdccd276c39387ad022addf26f7ad21926d`; head: `e151a
 
 The [required Blacksmith comparison](https://github.com/tscircuit/bus-lanes-solver/actions/runs/41844093287) finished with its **11/11 acceptance check green**. The table below is from the separate fresh local pair: Bun 1.4.3, four CPU quota cores, 16 GiB memory, one serial worker per revision, two concurrent workers, 3,600 seconds per solve. Local timings are single-run observations. Total solve seconds: **1878.306 → 1889.589**.
 
-| Placement | Signals, base → head | DRC findings | Byte0 / byte1 skew, mm (unchanged) | Pair0 / pair1 / pair2 skew, mm (unchanged) | Coupling, base → head | Solve seconds, base → head |
+| Placement | Signals, base → head | DRC findings | Bus skews by group, mm (unchanged) | Pair0 / pair1 / pair2 skew, mm (unchanged) | Coupling, base → head | Solve seconds, base → head |
 | --- | --- | --- | --- | --- | --- | --- |
 | [control](control-solved.png) | 47/47 → 47/47 | 0 → 0 | 0.635000 / 0.635000 | 0.077868 / 0.126884 / 0.072830 | pass → pass | 24.760 → 24.616 |
 | [control-inner1](control-inner1-solved.png) | 47/47 → 47/47 | 0 → 0 | 0.635000 / 0.635000 | 0.048900 / 0.004720 / 0.030215 | pass → pass | 616.192 → 610.686 |
