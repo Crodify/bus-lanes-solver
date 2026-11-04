@@ -22,6 +22,13 @@ export interface ExpandedSignalSiteChoice {
   length: number
 }
 
+interface ExpandedSignalSiteRequest {
+  input: SimpleRouteJson
+  connection: Connection
+  targetLayer: string
+  allowPadEdgeSites?: boolean
+}
+
 const viaHoleClearance = (input: SimpleRouteJson) =>
   Math.max(
     input.minViaHoleEdgeToViaHoleEdgeClearance ?? 0.1,
@@ -84,13 +91,22 @@ export function generatedEscapeHolesConflict(
 /** Keep a bounded set of successful endpoint combinations. A multi-terminal
  * carrier search retains sites that actually reach the opposite package; short
  * surface stubs alone can all end in the same enclosed via-cell pocket. */
-export function* expandedSignalSiteChoices(
-  input: SimpleRouteJson,
-  connection: Connection,
-  targetLayer: string,
+export function* expandedSignalSiteChoices({
+  input,
+  connection,
+  targetLayer,
   limit = 8,
-): Generator<void, ExpandedSignalSiteChoice[]> {
-  const ends = yield* expandedSignalSites(input, connection, targetLayer)
+  allowPadEdgeSites = false,
+}: ExpandedSignalSiteRequest & { limit?: number }): Generator<
+  void,
+  ExpandedSignalSiteChoice[]
+> {
+  const ends = yield* expandedSignalSites({
+    input,
+    connection,
+    targetLayer,
+    allowPadEdgeSites,
+  })
   if (ends.some((sites) => !sites.length)) return []
   const available = ends.map((sites) => [...sites])
   const choices: ExpandedSignalSiteChoice[] = []
@@ -188,11 +204,15 @@ export function* expandedSignalSiteChoices(
  * the four immediately adjacent cells. Derive sites from the native pad pitch,
  * retain a full-stack manufactured barrel, and bound the native-layer approach
  * by both 2 mm and 2.5 pad pitches. Supplied copper is read-only. */
-export function* expandedSignalSites(
-  input: SimpleRouteJson,
-  connection: Connection,
-  targetLayer: string,
-): Generator<void, [ExpandedSignalSite[], ExpandedSignalSite[]]> {
+export function* expandedSignalSites({
+  input,
+  connection,
+  targetLayer,
+  allowPadEdgeSites = false,
+}: ExpandedSignalSiteRequest): Generator<
+  void,
+  [ExpandedSignalSite[], ExpandedSignalSite[]]
+> {
   const ends: [ExpandedSignalSite[], ExpandedSignalSite[]] = [[], []]
   const physical = getCopperLayerNames(input.layerCount)
   if (!physical.includes(targetLayer)) return ends
@@ -256,6 +276,32 @@ export function* expandedSignalSites(
     candidates.sort(
       (a, b) => distance(pad, a) - distance(pad, b) || a.x - b.x || a.y - b.y,
     )
+    const gridCandidateCount = candidates.length
+    // Fixed copper can leave a drill-clear escape between the BGA grid sites.
+    // The annulus may join its own pad; the drill must remain outside it.
+    const padToViaDistance = (owner.width + hole) / 2 + 1e-5
+    if (
+      allowPadEdgeSites &&
+      owner.shape === "circle" &&
+      padToViaDistance <= surfaceLimit
+    ) {
+      const diagonal = Math.SQRT1_2
+      for (const [x, y] of [
+        [1, 0],
+        [0, 1],
+        [-1, 0],
+        [0, -1],
+        [diagonal, diagonal],
+        [-diagonal, diagonal],
+        [-diagonal, -diagonal],
+        [diagonal, -diagonal],
+      ])
+        candidates.push({
+          x: pad.x + x * padToViaDistance,
+          y: pad.y + y * padToViaDistance,
+          layer: targetLayer,
+        })
+    }
     const viaScenes = physical.map(
       (layer) =>
         new VectorScene(
@@ -271,7 +317,8 @@ export function* expandedSignalSites(
           fixed,
         ),
     )
-    for (const point of candidates) {
+    for (const [index, point] of candidates.entries()) {
+      if (index === gridCandidateCount && ends[end].length) break
       if (viaScenes.some((scene) => !scene.visible(point, point))) continue
       if (
         existingVias.some(

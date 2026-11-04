@@ -11,6 +11,7 @@ import {
 import { withInferredSurfaceLayers } from "./effective-carrier-layers"
 import { withSkewRoundoffReserve } from "./skew-roundoff-reserve"
 import { initialSignalDogbones } from "./initial-signal-dogbones"
+import { routeGeneratedSignalSites } from "./route-generated-signal-sites"
 import { independentBusGroups } from "./route-independent-buses"
 import { routeFreshIndependentBuses } from "./route-fresh-independent-buses"
 import { retargetGeneratedEscape } from "./retarget-generated-escape"
@@ -405,6 +406,7 @@ export class BusLanesPipelineSolver extends BaseSolver {
   private packageCoupling?: Generator<void, Trace[]>
   private terminalLayers = new Map<string, string[]>()
   private hasNativeCarrierAlternatives = false
+  private canNegotiateGeneratedSites = false
   private carrierStrategy:
     | { name: "preferred"; startedAtIteration: 0 }
     | {
@@ -923,6 +925,24 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.routingInput.connections.find((c) => c.name === t.connection_name)
           ?.source_trace_id ?? t.connection_name,
     })) as Trace[]
+    const usedNativeFallback = result.connections.some((connection) =>
+      connection.pointsToConnect.some(
+        (point) =>
+          "layer" in point && point.layer !== targets.get(connection.name),
+      ),
+    )
+    this.canNegotiateGeneratedSites = !!(
+      usedNativeFallback &&
+      this.routingInput.traces?.length &&
+      this.options.denseSearch &&
+      this.options.smoothTuning &&
+      !this.routingInput.differentialPairs?.length &&
+      this.routingInput.connections.every((connection) =>
+        connection.pointsToConnect.every((point) =>
+          isUnroutedComponentPad(this.routingInput, connection, point),
+        ),
+      )
+    )
     // Only newly created, two-ended dogbones may change signal layers during
     // congestion negotiation. Existing handoffs always keep their fixed layer.
     const terminalLayers = new Map<string, string[]>()
@@ -1206,6 +1226,10 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.childOptions(),
         terminalLayers,
       )
+    // Preserve successful allocations, while reserving aggregate work for
+    // movable sites if these provisional fixed approaches cannot route.
+    if (this.canNegotiateGeneratedSites)
+      this.child.MAX_ITERATIONS = Math.min(this.child.MAX_ITERATIONS, 12000)
   }
   _step() {
     if (performance.now() >= this.routingDeadline) {
@@ -1328,6 +1352,15 @@ export class BusLanesPipelineSolver extends BaseSolver {
         )
       }
       this.child!.step()
+      if (this.child!.failed && this.canNegotiateGeneratedSites) {
+        this.canNegotiateGeneratedSites = false
+        this.surfaceFinishing = routeGeneratedSignalSites({
+          input: this.routingInput,
+          options: this.childOptions(),
+          maxSteps: Math.max(1, this.MAX_ITERATIONS - this.iterations),
+        })
+        return
+      }
       this.phase = `lanes_${this.child!.phase}`
       this.stats = {
         ...this.child!.stats,

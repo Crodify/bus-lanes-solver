@@ -71,7 +71,12 @@ test("expanded terminal cells escape a blocked adjacent-cell field with fixed fu
   const native = blockedAdjacentCells()
   const connection = native.connections[0]
   const original = structuredClone(native)
-  const search = expandedSignalSiteChoices(native, connection, "bottom", 4)
+  const search = expandedSignalSiteChoices({
+    input: native,
+    connection,
+    targetLayer: "bottom",
+    limit: 4,
+  })
   let step = search.next(),
     steps = 0
   while (!step.done && steps++ < 100000) step = search.next()
@@ -127,12 +132,12 @@ test("expanded cells retain an endpoint already on the carrier surface", () => {
     (o) => o.componentId === "package_4",
   ))
     obstacle.layers = ["bottom"]
-  const search = expandedSignalSiteChoices(
-    native,
-    native.connections[0],
-    "bottom",
-    4,
-  )
+  const search = expandedSignalSiteChoices({
+    input: native,
+    connection: native.connections[0],
+    targetLayer: "bottom",
+    limit: 4,
+  })
   let step = search.next(),
     steps = 0
   while (!step.done && steps++ < 100000) step = search.next()
@@ -166,11 +171,11 @@ test("expanded escapes reject invalid manufacturing dimensions without generatin
     native.minViaPadDiameter = diameter
     native.minViaHoleDiameter = hole
     const before = structuredClone(native)
-    const search = expandedSignalSiteChoices(
-      native,
-      native.connections[0],
-      "bottom",
-    )
+    const search = expandedSignalSiteChoices({
+      input: native,
+      connection: native.connections[0],
+      targetLayer: "bottom",
+    })
     expect(search.next()).toEqual({ done: true, value: [] })
     expect(native).toEqual(before)
   }
