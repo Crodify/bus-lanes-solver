@@ -1,33 +1,32 @@
 {
-  "case": "full",
-  "solverPath": "lib/index.ts",
+  "scope": "full",
+  "accepted": true,
+  "solverRevision": "220b7949bbdef8e4d58fec539cd6da12bb6a582e",
+  "runtime": {
+    "bun": "1.4.4",
+    "platform": "linux",
+    "arch": "x64"
+  },
+  "coreVersion": "0.0.2252",
+  "coreBundleSha256": "ae937eec8b413d232631df90b25c6dd21313533eb67898e88870f12d7167028c",
+  "dependencyLoads": 1,
+  "solverRuns": 1,
   "inputSha256": "be7707c9188ba888fc551fcc341b424eefdb5c65e2ab9e593c3a9829b1fe4221",
-  "outputSha256": "bf42d1b5a864eaa80e839b3646c15697944ec28bb306eca45fa71fd27f93bc80",
   "inputUnchanged": true,
-  "timeoutMs": 1800000,
-  "solveMilliseconds": 697064.934395,
-  "requestedSignals": 138,
-  "obstacles": 1446,
+  "outputSha256": "34ecb9dc4ba22b9cf6cb8c17fe63b18e56da1e0daff1d81bc7780591edb490a6",
+  "circuitSha256": "4211deedc11e6ecaa408abfab2cdd9b0b6524cde6e6e936a9fde28dc9fa4a097",
+  "renderMilliseconds": 791352.858958,
   "solved": true,
   "failed": false,
-  "phase": "solved",
-  "failureCode": null,
   "error": null,
+  "phase": "solved",
   "iterations": 15887,
-  "accepted": true,
-  "acceptedSignals": 138,
-  "stats": {
-    "carrierStrategy": "preferred",
-    "nativeGroups": {
-      "stage": "native_global_matching",
-      "pass": 5,
-      "collisions": 0,
-      "unfinished": [],
-      "groupName": "inner4",
-      "completedConnections": 102
-    },
-    "optimizationStoppedEarly": false
-  },
+  "requestedSignals": 138,
+  "routedSignals": 138,
+  "vias": 276,
+  "missingSourceTraceIds": [],
+  "errors": [],
+  "circuitErrors": [],
   "validation": {
     "accepted": true,
     "complete": true,
@@ -48,6 +47,7 @@
     },
     "viaInPad": [],
     "invalidGeometry": [],
+    "invalidViaApproaches": [],
     "buses": [
       {
         "busId": "EMI0_BYTE0",
@@ -284,14 +284,14 @@
         "maxLengthMm": null,
         "withinLengthLimit": true,
         "toleranceMm": 0.1,
-        "skewMm": 0.09999999999995168,
+        "skewMm": 0.09999999999995879,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_28",
-            "carrierLengthMm": 22.00000000000001,
+            "carrierLengthMm": 22.000000000000004,
             "fixedLengthMm": 0,
-            "totalLengthMm": 22.00000000000001
+            "totalLengthMm": 22.000000000000004
           },
           {
             "name": "source_trace_29",
@@ -1150,14 +1150,14 @@
         "maxLengthMm": null,
         "withinLengthLimit": true,
         "toleranceMm": 0.1,
-        "skewMm": 0.09999999999995168,
+        "skewMm": 0.09999999999995879,
         "matched": true,
         "lengths": [
           {
             "name": "source_trace_28",
-            "carrierLengthMm": 22.00000000000001,
+            "carrierLengthMm": 22.000000000000004,
             "fixedLengthMm": 0,
-            "totalLengthMm": 22.00000000000001
+            "totalLengthMm": 22.000000000000004
           },
           {
             "name": "source_trace_29",
@@ -1483,11 +1483,16 @@
       }
     ]
   },
-  "solverRevision": "94f062696d808ecd8e16fa6a4ffb42d2d2101bf1",
-  "runtime": "Bun 1.4.4, Linux x64",
-  "environment": {
-    "BUN_JSC_forceRAMSize": "2147483648",
-    "BUN_JSC_miniVMHeapGrowthFactor": "1.05"
+  "exportAudit": {
+    "accepted": true,
+    "sourceTraceCount": 138,
+    "pcbTraceCount": 138,
+    "viaCount": 276,
+    "expectedViaCount": 276,
+    "circuitErrorCount": 0,
+    "issues": []
   },
-  "measurementNote": "Fresh public-pipeline solve in the full-board regression test. Development validation ran concurrently; no speedup claim."
+  "case": "full",
+  "acceptedSignals": 138,
+  "provenance": "Fresh native core render with the checkout solver. renderMilliseconds includes core checks; it is not standalone solve time."
 }

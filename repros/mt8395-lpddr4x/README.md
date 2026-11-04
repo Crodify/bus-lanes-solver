@@ -6,6 +6,8 @@
 
 The **full native core capture routes all 138 signals**, including all 18 buses and 12 differential pairs, with the original timing and manufacturing constraints. The [completed board snapshot](board.snap.svg), [validated copper](routed/full.srj.json.gz), and [fresh solve report](routed/full-report.json) are retained for review. Snapshot export requires solver success and independent validation of all connections, DRC, timing, coupling, and forbidden via-in-pad holes.
 
+The [actual core-exported board](core-board.snap.png) and [Circuit JSON](routed/core-full.circuit.json.gz) also pass end-to-end acceptance: **138 PCB traces, 276 physical vias, zero core errors**, with every exported copper segment and via preserved. See the [native core report](routed/core-full-report.json).
+
 The independently captured byte-zero case also routes all 11 signals: [byte snapshot](byte0.snap.svg), [validated copper](routed/byte0.srj.json.gz), and [solve report](routed/byte0-report.json). `board.snap.svg` now contains completed copper, replacing the earlier input-only diagnostic.
 
 ## Replay the exact request
@@ -50,6 +52,26 @@ bun capture.tsx pair
 
 Capture runtime: `tscircuit@0.0.3057`, `@tscircuit/core@0.0.2252`, Bun 1.4.4. The nested lockfile pins the runtime independently from the repository solver. The explicit `capacity-autorouter@0.0.1030` peer pin prevents an older transitively hoisted package from failing core's module imports; capacity routing is never invoked. The published bus-lanes dependency is also never invoked during capture. Solver replays always use the repo implementation.
 
+## Route and export through core
+
+After installing the root and nested source dependencies above, run from the repository root:
+
+```sh
+BUN_JSC_forceRAMSize=2147483648 BUN_JSC_miniVMHeapGrowthFactor=1.05 \
+  bun repros/mt8395-lpddr4x/source/route.tsx full
+bun repros/mt8395-lpddr4x/board-export.ts full
+```
+
+`route.tsx` renders the original source board with core's native bus-lanes adapter, using the solver from this checkout. Because the pinned published core bundles its old solver, a guarded Bun module loader replaces only that dependency binding in memory. It does not patch core source, install an `algorithmFn`, change the SRJ or override solver options. The native adapter receives the original hash-checked request and runs the solver with its default budget. Installing the published `tscircuit` package alone does **not** include this PR's routing fix.
+
+The runner waits for core's render lifecycle and circuit checks, validates the solver output independently, and checks that every exported physical trace and plated via preserves the solver's accepted copper. Missing or duplicate source/PCB traces, changed copper, missing/moved drill holes and core circuit errors reject the export. A successful run writes `results/core-routed-full/circuit.json`, `accepted.srj.json` and `report.json`; failed runs cannot leave stale accepted files. `pair` and `byte0` are also supported.
+
+The first full end-to-end render at `bf1bd6e` exposed two issues that the earlier solver-only acceptance missed: the `EMI0_CK_T` and `EMI1_DQS0_T` tuning curves touched their own via lands. Core rejected both as self-shorts. Pinned-bus pair tuning now uses the terminal-via guard, and final generated-copper acceptance checks it again. The two actual terminal paths are retained as small regression fixtures; rejected board images are not published. Existing routing strategies retain their previous tuning options.
+
+The fresh end-to-end run at solver revision `220b7949bbdef8e4d58fec539cd6da12bb6a582e` passes all checks, including both former self-shorts. Native rendering and core checks took 791.35 seconds with the default solver budget; independent validation ran afterward. The full SRJ and overview snapshot have been replaced with this accepted output. The byte-zero artifact retains its earlier provenance and also passes the strengthened via checks. These timings are not a controlled performance comparison.
+
+The separate board exporter rechecks the input/output/circuit hashes, routing constraints and physical export before producing `board.svg` and top/inner2/inner4/inner6 layer views from **actual Circuit JSON**. These views complement the annotated solver snapshot at the top of this page.
+
 ## Input audit: no core fix required
 
 The built-in capture and core implementation agree on:
@@ -77,6 +99,7 @@ The prior connectivity-only experiment is **not** replayed here because it chang
 
 ```sh
 bun test tests/mt8395-core-input.test.ts tests/mt8395-routed-snapshot.test.ts
+bun test tests/mt8395-via-approach.test.ts tests/mt8395-core-board-export.test.ts
 bun test tests/repros/mt8395-core-full-routing.test.ts
 bun repros/mt8395-lpddr4x/snapshot.ts repros/mt8395-lpddr4x/results/full full
 ```
