@@ -1,6 +1,7 @@
 import { distance } from "./geometry"
 import { joinSignalEscapes } from "./join-signal-escapes"
 import { tuningPathIsSelfClear } from "./length-tuning"
+import { nativeSignalGeometryIsValid } from "./native-signal-geometry"
 import { routeAnglesAreConventional } from "./route-angle-validation"
 import { fixedCopper, routeCopper, VectorScene } from "./vector-scene"
 import type { Point, SimpleRouteJson, Trace, Wire } from "./types"
@@ -254,9 +255,51 @@ export function normalizeSurfaceCarriers(
     if (result !== trace) hard.push(...routeCopper(result))
     return result
   })
-  const escapes = generatedEscapes.map(
-    (escape) => replacements.get(escape) ?? escape,
-  )
+  const escapes = generatedEscapes.map((escape) => {
+    const replacement = replacements.get(escape)
+    if (replacement) return replacement
+    const first = escape.route[0]
+    // Via escapes are not composed into the carrier. Shape their native
+    // surface approach separately, keeping the via and other layers fixed.
+    const viaIndex = escape.route.findIndex(
+      (point) => point.route_type === "via",
+    )
+    const surface = { ...escape, route: escape.route.slice(0, viaIndex) }
+    if (
+      first?.route_type !== "wire" ||
+      viaIndex < 2 ||
+      !surface.route.every(
+        (point) => point.route_type === "wire" && point.layer === first.layer,
+      ) ||
+      nativeSignalGeometryIsValid(surface)
+    )
+      return escape
+    const connection = input.connections.find(
+      (connection) => connection.name === escape.connection_name,
+    )
+    if (!connection) return escape
+    hard ??= [...fixedCopper(input), ...traces.flatMap(routeCopper)]
+    const scene = new VectorScene(
+      input,
+      {
+        ...connection,
+        pointsToConnect: surface.route as Wire[],
+      },
+      first.width,
+      hard,
+    )
+    const normalizedSurface = octilinearSurfaceEscape(surface, scene)
+    if (normalizedSurface !== surface) {
+      const normalized = {
+        ...normalizedSurface,
+        route: [...normalizedSurface.route, ...escape.route.slice(viaIndex)],
+      }
+      replacements.set(escape, normalized)
+      hard.push(...routeCopper(normalized))
+      return normalized
+    }
+    return escape
+  })
   const byName = new Map(
     normalized.map((trace) => [trace.connection_name, trace]),
   )
