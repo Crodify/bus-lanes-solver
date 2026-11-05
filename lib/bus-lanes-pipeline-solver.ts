@@ -16,6 +16,7 @@ import {
 import { withInferredSurfaceLayers } from "./effective-carrier-layers"
 import { withSkewRoundoffReserve } from "./skew-roundoff-reserve"
 import { initialSignalDogbones } from "./initial-signal-dogbones"
+import { routeMultiTerminalBuses } from "./route-multi-terminal-buses"
 import { routeGeneratedSignalSites } from "./route-generated-signal-sites"
 import { independentBusGroups } from "./route-independent-buses"
 import { routeFreshIndependentBuses } from "./route-fresh-independent-buses"
@@ -476,7 +477,17 @@ export class BusLanesPipelineSolver extends BaseSolver {
       this.phase = "failed"
       return
     }
-    if (options.goal === "connectivity") {
+    if (
+      this.routingInput.connections.some(
+        (connection) => connection.pointsToConnect.length > 2,
+      )
+    ) {
+      this.nativeSingleCarrier = routeMultiTerminalBuses(
+        this.routingInput,
+        this.options,
+      )
+      this.phase = "route_multi_terminal_buses"
+    } else if (options.goal === "connectivity") {
       if (options.fanout === "none")
         throw Error("Connectivity routing requires local terminal vias")
       this.connectivitySolver = new SingleLayerConnectivitySolver(
@@ -1279,6 +1290,12 @@ export class BusLanesPipelineSolver extends BaseSolver {
         this.failureCode = this.nativeGroupsActive
           ? "native_group_matching_failed"
           : "native_single_carrier_matching_failed"
+        if (
+          this.routingInput.connections.some(
+            (connection) => connection.pointsToConnect.length > 2,
+          )
+        )
+          this.failureCode = "multi_terminal_routing_failed"
         this.phase = "failed"
       }
       return
