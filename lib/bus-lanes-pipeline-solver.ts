@@ -907,10 +907,9 @@ export class BusLanesPipelineSolver extends BaseSolver {
           return crossings * (this.attempt === 1 ? 0 : 4) + load.get(layer)!
         }
         return (
-          (group.size > 2
-            ? rank(a) - rank(b) || via || crossingCost(a) - crossingCost(b)
-            : via ||
-              4 * (rank(a) - rank(b)) + crossingCost(a) - crossingCost(b)) ||
+          rank(a) - rank(b) ||
+          via ||
+          crossingCost(a) - crossingCost(b) ||
           retryOrder.get(a)! - retryOrder.get(b)!
         )
       })
